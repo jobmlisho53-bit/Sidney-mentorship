@@ -1,0 +1,218 @@
+/* ASKSIDNEY — Premium Gold & Warm White */
+
+:root {
+    --gold: #C9A830;
+    --gold-light: #D4AF37;
+    --gold-dark: #9A7B1F;
+    --gold-gradient: linear-gradient(135deg, #BF953F, #FCF6B5, #B38728, #FBF5B7, #AA771C);
+}
+
+/* Light mode — warm ivory, not pure white */
+body {
+    --bg: #FDFBF7;
+    --bg-secondary: #F8F5ED;
+    --text: #2B2B2B;
+    --text-muted: rgba(0,0,0,0.48);
+    --card-bg: #FFFFFF;
+    --card-border: rgba(0,0,0,0.06);
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    --nav-text: #2B2B2B;
+    --footer-border: rgba(0,0,0,0.05);
+    --proof-bg: #FDF9EF;
+    --proof-border: rgba(201,168,48,0.25);
+    --divider-opacity: 0.2;
+    
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+    transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Dark mode — deep charcoal, not pure black */
+body.dark {
+    --bg: #141414;
+    --bg-secondary: #1A1A1A;
+    --text: #E8E6E0;
+    --text-muted: rgba(232,230,224,0.45);
+    --card-bg: #1A1A1A;
+    --card-border: rgba(255,255,255,0.06);
+    --card-shadow: none;
+    --nav-text: #E8E6E0;
+    --footer-border: rgba(255,255,255,0.05);
+    --proof-bg: rgba(201,168,48,0.04);
+    --proof-border: rgba(201,168,48,0.15);
+    --divider-opacity: 0.15;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+h1, h2, h3, h4 {
+    font-family: 'Helvetica Neue', 'Arial', sans-serif;
+    font-weight: 300;
+    letter-spacing: -0.5px;
+}
+
+.gold-text {
+    background: var(--gold-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.gold-line {
+    width: 50px;
+    height: 2px;
+    background: var(--gold-gradient);
+    margin: 18px 0;
+}
+
+.btn-gold {
+    display: inline-block;
+    padding: 16px 44px;
+    background: var(--gold-gradient);
+    color: #1A1A1A;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+    border: none;
+    cursor: pointer;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+}
+
+.btn-gold:hover {
+    filter: brightness(1.06);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(180,140,40,0.25);
+}
+
+.card {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    padding: 40px 32px;
+    border-radius: 4px;
+    box-shadow: var(--card-shadow);
+    transition: border-color 0.35s ease, transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.card:hover {
+    border-color: rgba(201,168,48,0.35);
+    transform: translateY(-4px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+}
+
+.section {
+    padding: 100px 28px;
+    max-width: 1120px;
+    margin: 0 auto;
+}
+
+.divider {
+    border: none;
+    height: 1px;
+    background: linear-gradient(to right, transparent, rgba(201,168,48, var(--divider-opacity)), transparent);
+    margin: 70px 0;
+}
+
+.proof-card {
+    background: var(--proof-bg);
+    border: 1px solid var(--proof-border);
+    border-radius: 4px;
+    padding: 32px 24px;
+    text-align: center;
+}
+
+.proof-card .amount {
+    font-size: 2.4rem;
+    font-weight: 400;
+    color: #C9A830;
+    letter-spacing: -1px;
+}
+
+footer {
+    text-align: center;
+    padding: 40px 24px;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--footer-border);
+}
+
+/* Theme toggle */
+.theme-toggle {
+    background: none;
+    border: 1px solid var(--card-border);
+    color: var(--nav-text);
+    padding: 7px 16px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    border-radius: 3px;
+    transition: all 0.3s ease;
+}
+
+.theme-toggle:hover {
+    border-color: rgba(201,168,48,0.45);
+    color: #C9A830;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card-grid {
+        grid-template-columns: 1fr !important;
+    }
+    
+    h1 {
+        font-size: 2.4rem !important;
+    }
+    
+    h2 {
+        font-size: 2rem !important;
+    }
+    
+    .section {
+        padding: 60px 18px;
+    }
+    
+    nav {
+        padding: 18px 18px !important;
+    }
+    
+    nav a {
+        margin-left: 18px !important;
+        font-size: 0.75rem !important;
+    }
+}
+
+/* Mobile nav fixes */
+@media (max-width: 600px) {
+    nav {
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        text-align: center;
+    }
+    
+    nav > div:last-child {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+    }
+    
+    nav a {
+        margin-left: 0 !important;
+    }
+    
+    .theme-toggle {
+        display: inline-block;
+        margin-top: 4px;
+    }
+}

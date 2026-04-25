@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ASKSIDNEY | Mentee Portal</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- LOCK SCREEN -->
+<section id="lockScreen" class="section" style="text-align: center; padding-top: 140px;">
+    <p style="font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(212,175,55,0.65); margin-bottom: 16px;">Mentee Portal</p>
+    
+    <h1 style="font-size: 2.6rem; font-weight: 300; margin-bottom: 16px;">
+        Welcome to Your <span class="gold-text">Blueprint</span>
+    </h1>
+    
+    <p style="color: var(--text-muted); max-width: 460px; margin: 0 auto 40px auto; font-size: 1rem; line-height: 1.7;">
+        Enter the access code Sidney sent you after payment.
+    </p>
+    
+    <div style="max-width: 400px; margin: 0 auto;">
+        <input 
+            type="text" 
+            id="accessCode" 
+            placeholder="SIDNEY-XXXXXXXX" 
+            style="width: 100%; padding: 14px 18px; font-size: 0.95rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; text-align: center; letter-spacing: 2px; outline: none;"
+        >
+        <button onclick="verifyAccess()" style="margin-top: 16px; width: 100%;" class="btn-gold">Access Portal</button>
+    </div>
+    
+    <p id="errorMsg" style="color: #B33A3A; margin-top: 16px; font-size: 0.85rem; display: none;"></p>
+    <p id="loadingMsg" style="color: var(--text-muted); margin-top: 16px; font-size: 0.85rem; display: none;">Verifying...</p>
+    
+    <p style="margin-top: 32px; font-size: 0.8rem; color: var(--text-muted);">
+        No access code yet? <a href="/" style="color: #C9A830; text-decoration: none;">Apply for mentorship</a>
+    </p>
+</section>
+
+<!-- PORTAL CONTENT -->
+<section id="portalContent" style="display: none;" class="section">
+    
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px;">
+        <div>
+            <h2 style="font-size: 1.8rem; font-weight: 300;">Your Dashboard</h2>
+            <p style="color: var(--text-muted); margin-top: 4px;">Welcome, <span id="menteeName"></span></p>
+        </div>
+        <button onclick="logout()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Logout</button>
+    </div>
+    
+    <div class="card-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px;">
+        
+        <div class="card">
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Your Blueprint</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Your personalized trading strategy, built around your strengths.</p>
+            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Available after Session 1</p>
+        </div>
+        
+        <div class="card">
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Book a Session</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Schedule your next call with Sidney directly.</p>
+            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Contact Sidney via WhatsApp</p>
+        </div>
+        
+        <div class="card">
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Your Progress</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Current stage: <strong>Stage <span id="currentStage">1</span></strong></p>
+            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Keep going</p>
+        </div>
+        
+    </div>
+    
+    <div class="card" style="margin-bottom: 24px;">
+        <h3 style="font-size: 1.2rem; font-weight: 400; margin-bottom: 16px;">Resources &amp; Materials</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Session recordings, worksheets, and trade plan templates will appear here as your mentorship progresses through the 3 stages.</p>
+    </div>
+    
+</section>
+
+<script>
+async function verifyAccess() {
+    const code = document.getElementById('accessCode').value.trim();
+    const errorMsg = document.getElementById('errorMsg');
+    const loadingMsg = document.getElementById('loadingMsg');
+    
+    errorMsg.style.display = 'none';
+    
+    if (!code) {
+        errorMsg.textContent = 'Please enter your access code.';
+        errorMsg.style.display = 'block';
+        return;
+    }
+    
+    loadingMsg.style.display = 'block';
+    
+    try {
+        const response = await fetch('/api/verify-access', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+        
+        const data = await response.json();
+        loadingMsg.style.display = 'none';
+        
+        if (data.valid) {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('portalContent').style.display = 'block';
+            document.getElementById('menteeName').textContent = data.mentee.full_name || 'Trader';
+            document.getElementById('currentStage').textContent = data.mentee.current_stage || 1;
+        } else {
+            errorMsg.textContent = data.message || 'Invalid access code.';
+            errorMsg.style.display = 'block';
+        }
+    } catch (err) {
+        loadingMsg.style.display = 'none';
+        errorMsg.textContent = 'Something went wrong. Please try again.';
+        errorMsg.style.display = 'block';
+        console.error('Verification error:', err);
+    }
+}
+
+function logout() {
+    document.getElementById('portalContent').style.display = 'none';
+    document.getElementById('lockScreen').style.display = 'block';
+    document.getElementById('accessCode').value = '';
+    document.getElementById('errorMsg').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
