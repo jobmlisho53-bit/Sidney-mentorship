@@ -5,6 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ASKSIDNEY | Mentee Portal</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: var(--card-border);
+            border-radius: 3px;
+            margin-top: 12px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--gold-gradient);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        .stage-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+        .stage-done { background: #C9A830; }
+        .stage-current { background: #C9A830; box-shadow: 0 0 0 3px rgba(201,168,48,0.2); }
+        .stage-pending { background: var(--card-border); }
+        .resource-link {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--card-border);
+            color: var(--text);
+            text-decoration: none;
+            transition: color 0.2s ease;
+        }
+        .resource-link:hover { color: #C9A830; }
+        .resource-link:last-child { border-bottom: none; }
+    </style>
 </head>
 <body>
 
@@ -25,6 +63,7 @@
             type="text" 
             id="accessCode" 
             placeholder="SIDNEY-XXXXXXXX" 
+            autocomplete="off"
             style="width: 100%; padding: 14px 18px; font-size: 0.95rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; text-align: center; letter-spacing: 2px; outline: none;"
         >
         <button onclick="verifyAccess()" style="margin-top: 16px; width: 100%;" class="btn-gold">Access Portal</button>
@@ -38,42 +77,101 @@
     </p>
 </section>
 
-<!-- PORTAL CONTENT -->
+<!-- PORTAL DASHBOARD -->
 <section id="portalContent" style="display: none;" class="section">
     
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px;">
+    <!-- Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; flex-wrap: wrap; gap: 20px;">
         <div>
-            <h2 style="font-size: 1.8rem; font-weight: 300;">Your Dashboard</h2>
-            <p style="color: var(--text-muted); margin-top: 4px;">Welcome, <span id="menteeName"></span></p>
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.6); margin-bottom: 8px;">Your Dashboard</p>
+            <h2 style="font-size: 2rem; font-weight: 300;">Welcome, <span id="menteeName" class="gold-text">Trader</span></h2>
+            <p style="color: var(--text-muted); margin-top: 4px; font-size: 0.9rem;">Stage <span id="currentStage">1</span> of 3</p>
         </div>
-        <button onclick="logout()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Logout</button>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <a href="https://wa.me/254790747026" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; border-radius: 3px; font-size: 0.85rem; letter-spacing: 0.5px; transition: opacity 0.2s ease;">Message Sidney</a>
+            <button onclick="logout()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Logout</button>
+        </div>
     </div>
     
-    <div class="card-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 48px;">
+    <!-- Stage Progress -->
+    <div class="card" style="margin-bottom: 40px;">
+        <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 20px;">Your Progress</p>
         
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <div style="text-align: center; flex: 1;">
+                <span class="stage-dot" id="stageDot1"></span>
+                <p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 1</p>
+                <p style="font-size: 0.7rem; color: var(--text-muted);">Foundation &amp; Strategy</p>
+            </div>
+            <div style="text-align: center; flex: 1;">
+                <span class="stage-dot" id="stageDot2"></span>
+                <p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 2</p>
+                <p style="font-size: 0.7rem; color: var(--text-muted);">The Business Plan</p>
+            </div>
+            <div style="text-align: center; flex: 1;">
+                <span class="stage-dot" id="stageDot3"></span>
+                <p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 3</p>
+                <p style="font-size: 0.7rem; color: var(--text-muted);">The Holy Grail</p>
+            </div>
+        </div>
+        
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill" style="width: 0%;"></div>
+        </div>
+        
+        <p style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--text-muted);" id="stageMessage"></p>
+    </div>
+    
+    <!-- Dashboard Grid -->
+    <div class="card-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px;">
+        
+        <!-- Blueprint -->
         <div class="card">
             <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Your Blueprint</p>
-            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Your personalized trading strategy, built around your strengths.</p>
-            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Available after Session 1</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">A tailored trading strategy built around your strengths and personality. Reviewed and updated as you progress.</p>
+            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;" id="blueprintStatus">Available after Session 1</p>
         </div>
         
+        <!-- Upcoming Session -->
         <div class="card">
-            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Book a Session</p>
-            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Schedule your next call with Sidney directly.</p>
-            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Contact Sidney via WhatsApp</p>
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Next Session</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Schedule your one-on-one call with Sidney. Discuss your progress, ask questions, refine your edge.</p>
+            <a href="https://wa.me/254790747026?text=Hi%20Sidney,%20I%20want%20to%20book%20my%20next%20session." target="_blank" style="display: inline-block; margin-top: 16px; font-size: 0.8rem; color: #C9A830; text-decoration: none;">Book via WhatsApp</a>
         </div>
         
+        <!-- Action Items -->
         <div class="card">
-            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Your Progress</p>
-            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">Current stage: <strong>Stage <span id="currentStage">1</span></strong></p>
-            <p style="margin-top: 16px; font-size: 0.8rem; color: #C9A830;">Keep going</p>
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: rgba(212,175,55,0.55); margin-bottom: 12px;">Action Items</p>
+            <ul style="list-style: none; color: var(--text-muted); font-size: 0.85rem; line-height: 2;" id="actionItems">
+                <li>Complete your trade journal setup</li>
+                <li>Review Stage 1 materials</li>
+                <li>Prepare questions for next session</li>
+            </ul>
         </div>
         
     </div>
     
+    <!-- Session Notes -->
     <div class="card" style="margin-bottom: 24px;">
-        <h3 style="font-size: 1.2rem; font-weight: 400; margin-bottom: 16px;">Resources &amp; Materials</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Session recordings, worksheets, and trade plan templates will appear here as your mentorship progresses through the 3 stages.</p>
+        <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Session Notes</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.7;">After each session, Sidney will leave notes and action steps here. Check back regularly.</p>
+        
+        <div id="sessionNotes" style="margin-top: 20px;">
+            <div class="resource-link">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Loading notes...</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Resources -->
+    <div class="card">
+        <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Your Resources</h3>
+        <a href="https://betjzouqrqlxmauxdkic.supabase.co/storage/v1/object/public/resources/trade-plan.pdf" target="_blank" class="resource-link">
+        <div id="resourcesList">
+            <div class="resource-link">
+                <span style="color: var(--text-muted); font-size: 0.9rem;">Loading resources...</span>
+            </div>
+        </div>
     </div>
     
 </section>
@@ -105,19 +203,111 @@ async function verifyAccess() {
         loadingMsg.style.display = 'none';
         
         if (data.valid) {
-            document.getElementById('lockScreen').style.display = 'none';
-            document.getElementById('portalContent').style.display = 'block';
-            document.getElementById('menteeName').textContent = data.mentee.full_name || 'Trader';
-            document.getElementById('currentStage').textContent = data.mentee.current_stage || 1;
+            unlockPortal(data.mentee);
         } else {
             errorMsg.textContent = data.message || 'Invalid access code.';
             errorMsg.style.display = 'block';
         }
     } catch (err) {
         loadingMsg.style.display = 'none';
-        errorMsg.textContent = 'Something went wrong. Please try again.';
+        errorMsg.textContent = 'Connection error. Please try again.';
         errorMsg.style.display = 'block';
-        console.error('Verification error:', err);
+    }
+}
+
+function unlockPortal(mentee) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('portalContent').style.display = 'block';
+    document.getElementById('menteeName').textContent = mentee.full_name || 'Trader';
+    
+    const stage = mentee.current_stage || 1;
+    document.getElementById('currentStage').textContent = stage;
+    
+    updateProgress(stage);
+    loadSessionNotes(mentee.email);
+    loadResources(mentee.email);
+}
+
+function updateProgress(stage) {
+    // Update dots
+    const dot1 = document.getElementById('stageDot1');
+    const dot2 = document.getElementById('stageDot2');
+    const dot3 = document.getElementById('stageDot3');
+    const message = document.getElementById('stageMessage');
+    
+    dot1.className = 'stage-dot';
+    dot2.className = 'stage-dot';
+    dot3.className = 'stage-dot';
+    
+    if (stage === 1) {
+        dot1.className = 'stage-dot stage-current';
+        dot2.className = 'stage-dot stage-pending';
+        dot3.className = 'stage-dot stage-pending';
+        document.getElementById('progressFill').style.width = '5%';
+        message.textContent = 'Building your foundation. Master the strategy before moving forward.';
+        document.getElementById('blueprintStatus').textContent = 'In progress — Session 1 focus';
+    } else if (stage === 2) {
+        dot1.className = 'stage-dot stage-done';
+        dot2.className = 'stage-dot stage-current';
+        dot3.className = 'stage-dot stage-pending';
+        document.getElementById('progressFill').style.width = '38%';
+        message.textContent = 'You have a strategy. Now learn to extract consistent money from it.';
+        document.getElementById('blueprintStatus').textContent = 'Completed — Refining your plan';
+    } else if (stage === 3) {
+        dot1.className = 'stage-dot stage-done';
+        dot2.className = 'stage-dot stage-done';
+        dot3.className = 'stage-dot stage-current';
+        document.getElementById('progressFill').style.width = '72%';
+        message.textContent = 'The final stretch. Mastering your mind for long-term consistency.';
+        document.getElementById('blueprintStatus').textContent = 'Established — Optimizing execution';
+    }
+}
+
+async function loadSessionNotes(email) {
+    const container = document.getElementById('sessionNotes');
+    try {
+        const res = await fetch('/api/session-notes?email=' + encodeURIComponent(email));
+        const notes = await res.json();
+        
+        if (!notes.length) {
+            container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">No session notes yet. Your first session will appear here.</span></div>';
+            return;
+        }
+        
+        container.innerHTML = notes.map(n => `
+            <div class="resource-link">
+                <div>
+                    <p style="font-weight: 500;">${n.title}</p>
+                    <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 2px;">${n.body || 'No details'}</p>
+                </div>
+                <span style="font-size: 0.7rem; color: var(--text-muted);">${new Date(n.created_at).toLocaleDateString()}</span>
+            </div>
+        `).join('');
+    } catch (err) {
+        container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Could not load notes.</span></div>';
+    }
+}
+
+async function loadResources(email) {
+    const container = document.getElementById("resourcesList");
+    try {
+        const res = await fetch("/api/resources?email=" + encodeURIComponent(email));
+        const resources = await res.json();
+        
+        if (!resources.length) {
+            container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">No resources uploaded yet.</span></div>';
+            return;
+        }
+        
+        const supabaseUrl = "https://betjzouqrqlxmauxdkic.supabase.co";
+        container.innerHTML = resources.map(r => `
+            <a href="${supabaseUrl}/storage/v1/object/public/resources/${r.filename}" target="_blank" class="resource-link">
+                <span>${r.title}</span>
+                <span style="font-size: 0.75rem; color: #C9A830;">Download</span>
+            </a>
+        `).join("");
+    } catch (err) {
+        container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Could not load resources.</span></div>';
     }
 }
 
@@ -127,6 +317,11 @@ function logout() {
     document.getElementById('accessCode').value = '';
     document.getElementById('errorMsg').style.display = 'none';
 }
+
+// Allow Enter key to submit
+document.getElementById('accessCode').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') verifyAccess();
+});
 </script>
 
 </body>

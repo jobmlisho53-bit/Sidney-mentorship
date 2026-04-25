@@ -6,10 +6,11 @@ const path = require('path');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.static('public'));
+// Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ============ ROUTES ============
 
 // Serve landing page
 app.get('/', (req, res) => {
@@ -18,11 +19,20 @@ app.get('/', (req, res) => {
 
 // Serve portal page
 app.get('/portal', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'portal.html'));
+});
+
+// Serve Sidney login page
 app.get('/sidney', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sidney.html'));
 });
-    res.sendFile(path.join(__dirname, 'public', 'portal.html'));
+
+// Serve admin dashboard (after login)
+app.get('/admin.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+
+// ============ API ENDPOINTS ============
 
 // Handle mentorship application
 app.post('/api/apply', async (req, res) => {
@@ -49,7 +59,7 @@ app.post('/api/apply', async (req, res) => {
 
     if (error) {
         console.error('Application error:', error);
-        return res.status(500).json({ error: 'Failed to submit application. Please try again.' });
+        return res.status(500).json({ error: 'Failed to submit application.' });
     }
 
     res.json({ 
@@ -111,7 +121,7 @@ app.post('/api/verify-access', async (req, res) => {
     });
 });
 
-// Admin endpoint to view all applicants
+// Admin: view all applicants
 app.get('/api/admin/applicants', async (req, res) => {
     const { data, error } = await supabase
         .from('applicants')
@@ -125,7 +135,7 @@ app.get('/api/admin/applicants', async (req, res) => {
     res.json(data);
 });
 
-// Admin endpoint to view all mentees
+// Admin: view all mentees
 app.get('/api/admin/mentees', async (req, res) => {
     const { data, error } = await supabase
         .from('mentees')
@@ -139,7 +149,28 @@ app.get('/api/admin/mentees', async (req, res) => {
     res.json(data);
 });
 
-// Admin endpoint to generate new access codes
+// Admin: view all access codes
+app.get('/api/admin/codes', async (req, res) => {
+    const { data, error } = await supabase
+        .from('access_codes')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        return res.status(500).json({ error: 'Failed to fetch codes.' });
+    }
+
+    const formatted = data.map(c => ({
+        code: c.code,
+        used: c.is_used,
+        mentee_id: c.used_by,
+        created_at: c.created_at
+    }));
+
+    res.json(formatted);
+});
+
+// Admin: generate access codes
 app.post('/api/admin/generate-codes', async (req, res) => {
     const { count = 5 } = req.body;
     const codes = [];
@@ -160,7 +191,7 @@ app.post('/api/admin/generate-codes', async (req, res) => {
     res.json({ success: true, codes: codes.map(c => c.code) });
 });
 
-// Admin endpoint to link a mentee to an access code
+// Admin: link mentee to access code
 app.post('/api/admin/link-mentee', async (req, res) => {
     const { email, full_name, code } = req.body;
 
@@ -186,11 +217,108 @@ app.post('/api/admin/link-mentee', async (req, res) => {
     res.json({ success: true, mentee: data });
 });
 
+// Admin: update mentee stage
+app.post('/api/admin/update-stage', async (req, res) => {
+    const { email, stage } = req.body;
+    
+    if (!email || !stage) {
+        return res.status(400).json({ error: 'Email and stage are required.' });
+    }
+    
+    const { error } = await supabase
+        .from('mentees')
+        .update({ current_stage: stage })
+        .eq('email', email);
+    
+    if (error) {
+        return res.status(500).json({ error: 'Failed to update stage.' });
+    }
+    
+    res.json({ success: true });
+});
+
+// Get session notes for a mentee
+app.get('/api/session-notes', async (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email required.' });
+    
+    const { data, error } = await supabase
+        .from('session_notes')
+        .select('*')
+        .eq('mentee_email', email)
+        .order('created_at', { ascending: false });
+    
+    if (error) return res.status(500).json({ error: 'Failed to fetch notes.' });
+    res.json(data);
+});
+
+// Admin: add session note
+app.post('/api/admin/session-notes', async (req, res) => {
+    const { mentee_email, title, body } = req.body;
+    if (!mentee_email || !title) return res.status(400).json({ error: 'Email and title required.' });
+    
+    const { error } = await supabase
+        .from('session_notes')
+        .insert([{ mentee_email, title, body }]);
+    
+    if (error) return res.status(500).json({ error: 'Failed to save note.' });
+    res.json({ success: true });
+});
+
+// Admin: upload resource file
+const multer = require('multer');
+const upload = multer({ storage: multer.memoryStorage() });
+
+app.post('/api/admin/upload-resource', upload.single('file'), async (req, res) => {
+    const { filename, title, mentee_email } = req.body;
+    if (!req.file || !filename || !title || !mentee_email) return res.status(400).json({ error: 'File, filename, title and mentee email required.' });
+
+    const { error: uploadError } = await supabase.storage
+        .from('resources')
+        .upload(filename, req.file.buffer, {
+            contentType: 'application/pdf',
+            upsert: true
+        });
+
+    if (uploadError) return res.status(500).json({ error: uploadError.message });
+
+    const { error: dbError } = await supabase
+        .from('resources')
+        .insert({ mentee_email, title, filename });
+
+    if (dbError) return res.status(500).json({ error: dbError.message });
+
+    res.json({ success: true });
+});
+
+// Admin: get Supabase storage URL for uploads
+app.get('/api/admin/storage-url', (req, res) => {
+    res.json({ url: process.env.SUPABASE_URL + '/storage/v1/object/public/resources/' });
+});
+
+// Get resources for a mentee
+app.get('/api/resources', async (req, res) => {
+    const email = req.query.email;
+    if (!email) return res.status(400).json({ error: 'Email required.' });
+    
+    const { data, error } = await supabase
+        .from('resources')
+        .select('*')
+        .eq('mentee_email', email)
+        .order('uploaded_at', { ascending: false });
+    
+    if (error) return res.status(500).json({ error: 'Failed to fetch resources.' });
+    res.json(data);
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// ============ STATIC FILES (must be last) ============
+app.use(express.static('public', { setHeaders: (res) => { res.set('Cache-Control', 'no-store'); } }));
+
 app.listen(PORT, () => {
-    console.log(`ASKSIDNEY Platform running on http://localhost:${PORT}`);
+    console.log('ASKSIDNEY Platform running on http://localhost:' + PORT);
 });

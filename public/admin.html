@@ -13,221 +13,188 @@
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px;">
         <div>
             <h1 style="font-size: 2rem; font-weight: 300;"><span class="gold-text">Sidney</span> Dashboard</h1>
-            <p style="color: var(--text-muted); margin-top: 4px;">Manage applications, mentees, and access codes.</p>
+            <p style="color: var(--text-muted); margin-top: 4px;">Manage applications, mentees, access codes, notes, and resources.</p>
         </div>
         <button onclick="location.reload()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Refresh</button>
     </div>
     
-    <!-- Tabs -->
     <div style="display: flex; gap: 0; margin-bottom: 40px; border-bottom: 1px solid var(--card-border);">
         <button onclick="switchTab('applicants')" id="tab-applicants" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: #C9A830; font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid #C9A830;">Applicants</button>
         <button onclick="switchTab('mentees')" id="tab-mentees" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Mentees</button>
         <button onclick="switchTab('codes')" id="tab-codes" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Access Codes</button>
     </div>
     
-    <!-- Applicants Tab -->
     <div id="panel-applicants">
-        <div id="applicantsList" style="display: grid; gap: 16px;">
-            <p style="color: var(--text-muted);">Loading...</p>
-        </div>
+        <div id="applicantsList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
     </div>
     
-    <!-- Mentees Tab -->
     <div id="panel-mentees" style="display: none;">
-        <div id="menteesList" style="display: grid; gap: 16px;">
-            <p style="color: var(--text-muted);">Loading...</p>
-        </div>
+        <div id="menteesList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
     </div>
     
-    <!-- Access Codes Tab -->
     <div id="panel-codes" style="display: none;">
-        
         <div style="margin-bottom: 32px;">
             <button onclick="generateCodes()" class="btn-gold" style="font-size: 0.8rem; padding: 12px 28px;">Generate 5 New Codes</button>
             <span id="codeGenMsg" style="margin-left: 16px; font-size: 0.85rem; color: #C9A830; display: none;"></span>
         </div>
+        <div id="codesList" style="display: grid; gap: 12px;"><p style="color: var(--text-muted);">Loading...</p></div>
         
-        <div id="codesList" style="display: grid; gap: 12px;">
-            <p style="color: var(--text-muted);">Loading...</p>
-        </div>
-        
-        <!-- Link code to mentee -->
         <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
             <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Link Access Code to Mentee</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
                 <input type="email" id="linkEmail" placeholder="Mentee email" style="padding: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-                <input type="text" id="linkCode" placeholder="Access code (SIDNEY-...)" style="padding: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
+                <input type="text" id="linkCode" placeholder="Access code" style="padding: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
             </div>
             <button onclick="linkMentee()" style="margin-top: 16px; padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Link Mentee</button>
             <span id="linkMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
+        </div>
+        
+        <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
+            <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Add Session Note for Mentee</h3>
+            <input type="email" id="noteEmail" placeholder="Mentee email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
+            <input type="text" id="noteTitle" placeholder="Note title" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
+            <textarea id="noteBody" placeholder="Note details..." rows="3" style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none; resize: vertical;"></textarea>
+            <button onclick="addSessionNote()" style="padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Save Note</button>
+            <span id="noteMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
+        </div>
+        
+        <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
+            <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Upload Resource for Mentee</h3>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px;">Select a mentee, resource type, and PDF. They will see it in their portal instantly.</p>
+            <input type="email" id="resourceMentee" placeholder="Mentee email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
+            <select id="resourceType" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
+                <option value="">Select resource type</option>
+                <option value="Trade Plan Template">Trade Plan Template</option>
+                <option value="Risk Management Worksheet">Risk Management Worksheet</option>
+                <option value="Trade Journal Spreadsheet">Trade Journal Spreadsheet</option>
+                <option value="Pre-Session Checklist">Pre-Session Checklist</option>
+            </select>
+            <input type="file" id="resourceFile" accept=".pdf" style="display: block; width: 100%; padding: 10px 0; margin-bottom: 16px; font-size: 0.85rem; color: var(--text);">
+            <button onclick="uploadResource()" style="padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Upload Resource</button>
+            <span id="uploadMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
         </div>
     </div>
     
 </section>
 
 <script>
-// Tab switching
 function switchTab(tab) {
     document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.admin-tab').forEach(b => {
         b.style.color = 'var(--text-muted)';
         b.style.borderBottom = '2px solid transparent';
     });
-    
     document.getElementById('panel-' + tab).style.display = 'block';
     document.getElementById('tab-' + tab).style.color = '#C9A830';
     document.getElementById('tab-' + tab).style.borderBottom = '2px solid #C9A830';
-    
     if (tab === 'applicants') loadApplicants();
     if (tab === 'mentees') loadMentees();
     if (tab === 'codes') loadCodes();
 }
 
-// Load applicants
 async function loadApplicants() {
     const container = document.getElementById('applicantsList');
     try {
         const res = await fetch('/api/admin/applicants');
         const data = await res.json();
-        
-        if (!data.length) {
-            container.innerHTML = '<p style="color: var(--text-muted);">No applicants yet.</p>';
-            return;
-        }
-        
-        container.innerHTML = data.map(a => `
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <p style="font-weight: 500;">${a.full_name}</p>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">${a.email} ${a.phone ? '· ' + a.phone : ''}</p>
-                    <p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">${a.trading_experience || 'No experience'} · Payment: ${a.preferred_payment || 'Not specified'} · ${new Date(a.created_at).toLocaleDateString()}</p>
-                </div>
-                <span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ${a.status === 'pending' ? '#C9A830' : '#6B8E6B'};">${a.status}</span>
-            </div>
-        `).join('');
-    } catch (err) {
-        container.innerHTML = '<p style="color: #B33A3A;">Failed to load applicants.</p>';
-    }
+        if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No applicants yet.</p>'; return; }
+        container.innerHTML = data.map(a => '<div class="card" style="display: flex; justify-content: space-between; align-items: center;"><div><p style="font-weight: 500;">' + a.full_name + '</p><p style="color: var(--text-muted); font-size: 0.85rem;">' + a.email + (a.phone ? ' · ' + a.phone : '') + '</p><p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">' + (a.trading_experience || 'No experience') + ' · Payment: ' + (a.preferred_payment || 'Not specified') + ' · ' + new Date(a.created_at).toLocaleDateString() + '</p></div><span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ' + (a.status === 'pending' ? '#C9A830' : '#6B8E6B') + ';">' + a.status + '</span></div>').join('');
+    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
 }
 
-// Load mentees
 async function loadMentees() {
     const container = document.getElementById('menteesList');
     try {
         const res = await fetch('/api/admin/mentees');
         const data = await res.json();
-        
-        if (!data.length) {
-            container.innerHTML = '<p style="color: var(--text-muted);">No mentees yet.</p>';
-            return;
-        }
-        
-        container.innerHTML = data.map(m => `
-            <div class="card" style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <p style="font-weight: 500;">${m.full_name || 'Unnamed'}</p>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">${m.email} · Stage ${m.current_stage || 1}</p>
-                    <p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">Code: ${m.access_code || 'None'} · Portal: ${m.portal_accessed ? 'Yes' : 'No'} · ${new Date(m.created_at).toLocaleDateString()}</p>
-                </div>
-                <span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ${m.payment_status === 'verified' ? '#6B8E6B' : '#C9A830'};">${m.payment_status}</span>
-            </div>
-        `).join('');
-    } catch (err) {
-        container.innerHTML = '<p style="color: #B33A3A;">Failed to load mentees.</p>';
-    }
+        if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No mentees yet.</p>'; return; }
+        container.innerHTML = data.map(m => {
+            var s = m.current_stage || 1;
+            return '<div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;"><div style="flex: 1; min-width: 200px;"><p style="font-weight: 500;">' + (m.full_name || 'Unnamed') + '</p><p style="color: var(--text-muted); font-size: 0.85rem;">' + m.email + ' · Stage ' + s + '</p><p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">Code: ' + (m.access_code || 'None') + ' · Portal: ' + (m.portal_accessed ? 'Yes' : 'No') + ' · ' + new Date(m.created_at).toLocaleDateString() + '</p></div><div style="display: flex; align-items: center; gap: 10px;"><button onclick="updateStage(\'' + m.email + '\', ' + (s - 1) + ')" style="width: 28px; height: 28px; background: none; border: 1px solid var(--card-border); color: var(--text-muted); cursor: pointer; border-radius: 3px; font-size: 0.9rem;"' + (s <= 1 ? ' disabled' : '') + '>-</button><span style="font-size: 0.9rem; font-weight: 500; min-width: 20px; text-align: center;">' + s + '</span><button onclick="updateStage(\'' + m.email + '\', ' + (s + 1) + ')" style="width: 28px; height: 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; border-radius: 3px; font-size: 0.9rem;"' + (s >= 3 ? ' disabled' : '') + '>+</button></div><span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ' + (m.payment_status === 'verified' ? '#6B8E6B' : '#C9A830') + ';">' + m.payment_status + '</span></div>';
+        }).join('');
+    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
 }
 
-// Load access codes
 async function loadCodes() {
     const container = document.getElementById('codesList');
     try {
-        const res = await fetch('/api/admin/applicants');
-        const applicants = await res.json();
-        
-        const codesRes = await fetch('/api/admin/mentees');
-        const mentees = await codesRes.json();
-        
-        const allCodes = mentees.map(m => ({ code: m.access_code, used: true, email: m.email })).filter(c => c.code);
-        
-        container.innerHTML = allCodes.length ? allCodes.map(c => `
-            <div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: var(--proof-bg); border: 1px solid var(--proof-border); border-radius: 4px;">
-                <span style="font-family: monospace; letter-spacing: 2px; font-size: 1rem;">${c.code}</span>
-                <span style="font-size: 0.8rem; color: ${c.used ? '#6B8E6B' : '#C9A830'};">${c.used ? 'Assigned to ' + c.email : 'Available'}</span>
-            </div>
-        `).join('') : '<p style="color: var(--text-muted);">No codes generated yet. Click the button above.</p>';
-    } catch (err) {
-        container.innerHTML = '<p style="color: #B33A3A;">Failed to load codes.</p>';
-    }
+        const res = await fetch('/api/admin/codes');
+        const codes = await res.json();
+        if (!codes.length) { container.innerHTML = '<p style="color: var(--text-muted);">No codes yet.</p>'; return; }
+        container.innerHTML = codes.map(c => '<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: var(--proof-bg); border: 1px solid var(--proof-border); border-radius: 4px;"><span style="font-family: monospace; letter-spacing: 2px; font-size: 1rem;">' + c.code + '</span><span style="font-size: 0.8rem; color: ' + (c.used ? '#6B8E6B' : '#C9A830') + ';">' + (c.used ? 'Used' : 'Available') + '</span></div>').join('');
+    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
 }
 
-// Generate codes
 async function generateCodes() {
-    const msg = document.getElementById('codeGenMsg');
-    msg.style.display = 'none';
-    
+    var msg = document.getElementById('codeGenMsg'); msg.style.display = 'none';
     try {
-        const res = await fetch('/api/admin/generate-codes', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ count: 5 })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            msg.textContent = '5 codes generated.';
-            msg.style.color = '#6B8E6B';
-            msg.style.display = 'inline';
-            loadCodes();
-        }
-    } catch (err) {
-        msg.textContent = 'Failed. Try again.';
-        msg.style.color = '#B33A3A';
-        msg.style.display = 'inline';
-    }
+        var res = await fetch('/api/admin/generate-codes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 5 }) });
+        var data = await res.json();
+        if (data.success) { msg.textContent = '5 codes generated.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; loadCodes(); }
+    } catch (err) { msg.textContent = 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
 }
 
-// Link mentee
+async function updateStage(email, stage) {
+    if (stage < 1 || stage > 3) return;
+    try {
+        var res = await fetch('/api/admin/update-stage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, stage: stage }) });
+        var data = await res.json();
+        if (data.success) loadMentees();
+    } catch (err) {}
+}
+
 async function linkMentee() {
-    const email = document.getElementById('linkEmail').value.trim();
-    const code = document.getElementById('linkCode').value.trim();
-    const msg = document.getElementById('linkMsg');
-    msg.style.display = 'none';
-    
-    if (!email || !code) {
-        msg.textContent = 'Both fields are required.';
-        msg.style.color = '#B33A3A';
-        msg.style.display = 'inline';
-        return;
-    }
-    
+    var email = document.getElementById('linkEmail').value.trim();
+    var code = document.getElementById('linkCode').value.trim();
+    var msg = document.getElementById('linkMsg'); msg.style.display = 'none';
+    if (!email || !code) { msg.textContent = 'Both fields required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
     try {
-        const res = await fetch('/api/admin/link-mentee', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, full_name: email.split('@')[0], code })
-        });
-        const data = await res.json();
-        
-        if (data.success) {
-            msg.textContent = 'Mentee linked.';
-            msg.style.color = '#6B8E6B';
-            msg.style.display = 'inline';
-            document.getElementById('linkEmail').value = '';
-            document.getElementById('linkCode').value = '';
-            loadMentees();
-        } else {
-            msg.textContent = data.error || 'Failed.';
-            msg.style.color = '#B33A3A';
-            msg.style.display = 'inline';
-        }
-    } catch (err) {
-        msg.textContent = 'Connection error.';
-        msg.style.color = '#B33A3A';
-        msg.style.display = 'inline';
-    }
+        var res = await fetch('/api/admin/link-mentee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, full_name: email.split('@')[0], code: code }) });
+        var data = await res.json();
+        if (data.success) { msg.textContent = 'Mentee linked.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('linkEmail').value = ''; document.getElementById('linkCode').value = ''; loadMentees(); loadCodes(); }
+        else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
+    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
 }
 
-// Load on page open
+async function addSessionNote() {
+    var email = document.getElementById('noteEmail').value.trim();
+    var title = document.getElementById('noteTitle').value.trim();
+    var body = document.getElementById('noteBody').value.trim();
+    var msg = document.getElementById('noteMsg'); msg.style.display = 'none';
+    if (!email || !title) { msg.textContent = 'Email and title required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
+    try {
+        var res = await fetch('/api/admin/session-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentee_email: email, title: title, body: body }) });
+        var data = await res.json();
+        if (data.success) { msg.textContent = 'Note saved.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('noteEmail').value = ''; document.getElementById('noteTitle').value = ''; document.getElementById('noteBody').value = ''; }
+        else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
+    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
+}
+
+async function uploadResource() {
+    var email = document.getElementById('resourceMentee').value.trim();
+    var type = document.getElementById('resourceType').value;
+    var fileInput = document.getElementById('resourceFile');
+    var msg = document.getElementById('uploadMsg'); msg.style.display = 'none';
+    if (!email) { msg.textContent = 'Enter mentee email.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
+    if (!type) { msg.textContent = 'Select resource type.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
+    if (!fileInput.files.length) { msg.textContent = 'Choose a PDF.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
+    var file = fileInput.files[0];
+    var filename = type.toLowerCase().replace(/ /g, '-') + '.pdf';
+    msg.textContent = 'Uploading...'; msg.style.color = 'var(--text-muted)'; msg.style.display = 'inline';
+    var formData = new FormData();
+    formData.append('file', file);
+    formData.append('filename', filename);
+    formData.append('title', type);
+    formData.append('mentee_email', email);
+    try {
+        var res = await fetch('/api/admin/upload-resource', { method: 'POST', body: formData });
+        var data = await res.json();
+        if (data.success) { msg.textContent = 'Uploaded successfully.'; msg.style.color = '#6B8E6B'; fileInput.value = ''; document.getElementById('resourceType').value = ''; document.getElementById('resourceMentee').value = ''; }
+        else { msg.textContent = data.error || 'Upload failed.'; msg.style.color = '#B33A3A'; }
+    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; }
+    msg.style.display = 'inline';
+}
+
 loadApplicants();
 </script>
 
