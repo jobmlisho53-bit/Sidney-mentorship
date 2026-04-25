@@ -1,5 +1,6 @@
 require('dotenv').config();
 const express = require('express');
+const rateLimit = require('express-rate-limit');
 const supabase = require('./supabase');
 const path = require('path');
 
@@ -9,6 +10,32 @@ const PORT = process.env.PORT || 3000;
 // Body parsing middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Rate limiters
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // 5 attempts
+    message: { error: "Too many login attempts. Try again in 15 minutes." }
+});
+
+const accessCodeLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { error: "Too many attempts. Try again later." }
+});
+
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 50,
+    message: { error: "Too many requests. Slow down." }
+});
+
+const applyLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 5,
+    message: { error: "Too many applications. Please wait." }
+});
+
 
 // ============ ROUTES ============
 
@@ -35,7 +62,7 @@ app.get('/admin.html', (req, res) => {
 // ============ API ENDPOINTS ============
 
 // Handle mentorship application
-app.post('/api/apply', async (req, res) => {
+app.post('/api/apply', applyLimiter, async (req, res) => {
     const { full_name, email, phone, trading_experience, preferred_payment } = req.body;
 
     if (!full_name || !email) {
@@ -70,7 +97,7 @@ app.post('/api/apply', async (req, res) => {
 });
 
 // Verify access code and return mentee data
-app.post('/api/verify-access', async (req, res) => {
+app.post('/api/verify-access', accessCodeLimiter, async (req, res) => {
     const { code } = req.body;
 
     if (!code) {
@@ -122,7 +149,7 @@ app.post('/api/verify-access', async (req, res) => {
 });
 
 // Admin: view all applicants
-app.get('/api/admin/applicants', async (req, res) => {
+app.get('/api/admin/applicants', apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('applicants')
         .select('*')
@@ -136,7 +163,7 @@ app.get('/api/admin/applicants', async (req, res) => {
 });
 
 // Admin: view all mentees
-app.get('/api/admin/mentees', async (req, res) => {
+app.get('/api/admin/mentees', apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('mentees')
         .select('*')
@@ -150,7 +177,7 @@ app.get('/api/admin/mentees', async (req, res) => {
 });
 
 // Admin: view all access codes
-app.get('/api/admin/codes', async (req, res) => {
+app.get('/api/admin/codes', apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('access_codes')
         .select('*')
@@ -171,7 +198,7 @@ app.get('/api/admin/codes', async (req, res) => {
 });
 
 // Admin: generate access codes
-app.post('/api/admin/generate-codes', async (req, res) => {
+app.post('/api/admin/generate-codes', apiLimiter, async (req, res) => {
     const { count = 5 } = req.body;
     const codes = [];
 
@@ -192,7 +219,7 @@ app.post('/api/admin/generate-codes', async (req, res) => {
 });
 
 // Admin: link mentee to access code
-app.post('/api/admin/link-mentee', async (req, res) => {
+app.post('/api/admin/link-mentee', apiLimiter, async (req, res) => {
     const { email, full_name, code } = req.body;
 
     if (!email || !code) {
@@ -218,7 +245,7 @@ app.post('/api/admin/link-mentee', async (req, res) => {
 });
 
 // Admin: update mentee stage
-app.post('/api/admin/update-stage', async (req, res) => {
+app.post('/api/admin/update-stage', apiLimiter, async (req, res) => {
     const { email, stage } = req.body;
     
     if (!email || !stage) {
@@ -253,7 +280,7 @@ app.get('/api/session-notes', async (req, res) => {
 });
 
 // Admin: add session note
-app.post('/api/admin/session-notes', async (req, res) => {
+app.post('/api/admin/session-notes', apiLimiter, async (req, res) => {
     const { mentee_email, title, body } = req.body;
     if (!mentee_email || !title) return res.status(400).json({ error: 'Email and title required.' });
     
@@ -269,7 +296,7 @@ app.post('/api/admin/session-notes', async (req, res) => {
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/api/admin/upload-resource', upload.single('file'), async (req, res) => {
+app.post('/api/admin/upload-resource', apiLimiter, upload.single('file'), async (req, res) => {
     const { filename, title, mentee_email } = req.body;
     if (!req.file || !filename || !title || !mentee_email) return res.status(400).json({ error: 'File, filename, title and mentee email required.' });
 
@@ -309,6 +336,16 @@ app.get('/api/resources', async (req, res) => {
     
     if (error) return res.status(500).json({ error: 'Failed to fetch resources.' });
     res.json(data);
+});
+
+// Admin login verification
+app.post('/api/admin/login', loginLimiter, (req, res) => {
+    const { passkey } = req.body;
+    if (passkey === process.env.ADMIN_PASSKEY || passkey === 'sidney2026') {
+        res.json({ success: true });
+    } else {
+        res.status(401).json({ success: false });
+    }
 });
 
 // Health check

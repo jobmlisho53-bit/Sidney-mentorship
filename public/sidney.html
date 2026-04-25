@@ -9,42 +9,38 @@
 <body>
 
 <section class="section" style="text-align: center; padding-top: 160px;">
-    
     <p style="font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: rgba(212,175,55,0.65); margin-bottom: 16px;">Sidney Only</p>
-    
-    <h1 style="font-size: 2.4rem; font-weight: 300; margin-bottom: 40px;">
-        Admin <span class="gold-text">Access</span>
-    </h1>
-    
+    <h1 style="font-size: 2.4rem; font-weight: 300; margin-bottom: 40px;">Admin <span class="gold-text">Access</span></h1>
     <div style="max-width: 360px; margin: 0 auto;">
-        <input 
-            type="password" 
-            id="adminPass" 
-            placeholder="Enter passkey" 
-            style="width: 100%; padding: 14px 18px; font-size: 0.95rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; text-align: center; letter-spacing: 3px; outline: none;"
-        >
+        <input type="password" id="adminPass" placeholder="Enter passkey" autocomplete="off" style="width: 100%; padding: 14px 18px; font-size: 0.95rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; text-align: center; letter-spacing: 3px; outline: none;">
         <button onclick="login()" style="margin-top: 16px; width: 100%;" class="btn-gold">Access Dashboard</button>
     </div>
-    
-    <p id="loginError" style="color: #B33A3A; margin-top: 16px; font-size: 0.85rem; display: none;">Incorrect passkey.</p>
-    
-    <p style="margin-top: 40px; font-size: 0.75rem; color: var(--text-muted);">
-        <a href="/" style="color: var(--text-muted); text-decoration: none;">Back to site</a>
-    </p>
+    <p id="loginError" style="color: #B33A3A; margin-top: 16px; font-size: 0.85rem; display: none;"></p>
+    <p style="margin-top: 40px; font-size: 0.75rem; color: var(--text-muted);"><a href="/" style="color: var(--text-muted); text-decoration: none;">Back to site</a></p>
 </section>
 
 <script>
-function login() {
+async function login() {
     const pass = document.getElementById('adminPass').value.trim();
     const error = document.getElementById('loginError');
     error.style.display = 'none';
     
-    // Change this passkey to whatever Sidney wants
-    const correctPass = 'sidney2026';
-    
-    if (pass === correctPass) {
-        window.location.href = '/admin.html';
-    } else {
+    try {
+        const res = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ passkey: pass })
+        });
+        const data = await res.json();
+        
+        if (data.success) {
+            window.location.href = '/admin.html';
+        } else {
+            error.textContent = 'Incorrect passkey.';
+            error.style.display = 'block';
+        }
+    } catch (err) {
+        error.textContent = 'Connection error.';
         error.style.display = 'block';
     }
 }
