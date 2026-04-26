@@ -5,6 +5,14 @@ const supabase = require('./supabase');
 const path = require('path');
 
 const app = express();
+
+// Admin auth middleware
+function adminAuth(req, res, next) {
+    const key = req.headers['x-admin-key'] || req.query.admin_key;
+    const validKey = process.env.ADMIN_PASSKEY || 'sidney2026';
+    if (key === validKey) return next();
+    res.status(401).json({ error: 'Unauthorized.' });
+}
 const PORT = process.env.PORT || 3000;
 
 // Body parsing middleware
@@ -54,6 +62,13 @@ app.get('/sidney', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'sidney.html'));
 });
 
+
+function adminAuth(req, res, next) {
+    const key = req.headers["x-admin-key"] || req.query.admin_key;
+    const validKey = process.env.ADMIN_PASSKEY || "sidney2026";
+    if (key === validKey) return next();
+    res.status(401).json({ error: "Unauthorized." });
+}
 // Serve admin dashboard (after login)
 app.get('/admin.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
@@ -63,7 +78,7 @@ app.get('/admin.html', (req, res) => {
 
 // Handle mentorship application
 app.post('/api/apply', applyLimiter, async (req, res) => {
-    const { full_name, email, phone, trading_experience, preferred_payment } = req.body;
+    const { full_name, email, phone, trading_experience, preferred_payment, payment_confirmation } = req.body;
 
     if (!full_name || !email) {
         return res.status(400).json({ error: 'Name and email are required.' });
@@ -71,16 +86,14 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
 
     const { data, error } = await supabase
         .from('applicants')
-        .insert([
-            {
-                full_name,
-                email,
-                phone,
-                trading_experience,
-                preferred_payment,
-                status: 'pending'
-            }
-        ])
+        .insert([{
+            full_name,
+            email,
+            phone,
+            trading_experience,
+            preferred_payment,
+            status: 'pending'
+        }])
         .select()
         .single();
 
@@ -89,14 +102,18 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
         return res.status(500).json({ error: 'Failed to submit application.' });
     }
 
-    res.json({ 
-        success: true, 
-        message: 'Application received. Sidney will contact you shortly.',
-        applicant_id: data.id 
+    if (payment_confirmation && payment_confirmation !== 'Pending') {
+        const { error: proofError } = await supabase.from('payment_proofs').insert({ applicant_email: email, message: payment_confirmation });
+    if (proofError) console.error('Proof insert error:', proofError);
+    }
+
+    res.json({
+        success: true,
+        message: 'Application received.',
+        applicant_id: data.id
     });
 });
 
-// Verify access code and return mentee data
 app.post('/api/verify-access', accessCodeLimiter, async (req, res) => {
     const { code } = req.body;
 
@@ -149,7 +166,7 @@ app.post('/api/verify-access', accessCodeLimiter, async (req, res) => {
 });
 
 // Admin: view all applicants
-app.get('/api/admin/applicants', apiLimiter, async (req, res) => {
+app.get('/api/admin/applicants', adminAuth, apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('applicants')
         .select('*')
@@ -163,7 +180,7 @@ app.get('/api/admin/applicants', apiLimiter, async (req, res) => {
 });
 
 // Admin: view all mentees
-app.get('/api/admin/mentees', apiLimiter, async (req, res) => {
+app.get('/api/admin/mentees', adminAuth, apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('mentees')
         .select('*')
@@ -177,7 +194,7 @@ app.get('/api/admin/mentees', apiLimiter, async (req, res) => {
 });
 
 // Admin: view all access codes
-app.get('/api/admin/codes', apiLimiter, async (req, res) => {
+app.get('/api/admin/codes', adminAuth, apiLimiter, async (req, res) => {
     const { data, error } = await supabase
         .from('access_codes')
         .select('*')
@@ -198,7 +215,7 @@ app.get('/api/admin/codes', apiLimiter, async (req, res) => {
 });
 
 // Admin: generate access codes
-app.post('/api/admin/generate-codes', apiLimiter, async (req, res) => {
+app.post('/api/admin/generate-codes', adminAuth, apiLimiter, async (req, res) => {
     const { count = 5 } = req.body;
     const codes = [];
 
@@ -219,7 +236,7 @@ app.post('/api/admin/generate-codes', apiLimiter, async (req, res) => {
 });
 
 // Admin: link mentee to access code
-app.post('/api/admin/link-mentee', apiLimiter, async (req, res) => {
+app.post('/api/admin/link-mentee', adminAuth, apiLimiter, async (req, res) => {
     const { email, full_name, code } = req.body;
 
     if (!email || !code) {
@@ -238,14 +255,13 @@ app.post('/api/admin/link-mentee', apiLimiter, async (req, res) => {
         .single();
 
     if (error) {
-        return res.status(500).json({ error: 'Failed to link mentee.' });
     }
 
     res.json({ success: true, mentee: data });
 });
 
 // Admin: update mentee stage
-app.post('/api/admin/update-stage', apiLimiter, async (req, res) => {
+app.post('/api/admin/update-stage', adminAuth, apiLimiter, async (req, res) => {
     const { email, stage } = req.body;
     
     if (!email || !stage) {
@@ -280,7 +296,7 @@ app.get('/api/session-notes', async (req, res) => {
 });
 
 // Admin: add session note
-app.post('/api/admin/session-notes', apiLimiter, async (req, res) => {
+app.post('/api/admin/session-notes', adminAuth, apiLimiter, async (req, res) => {
     const { mentee_email, title, body } = req.body;
     if (!mentee_email || !title) return res.status(400).json({ error: 'Email and title required.' });
     
@@ -296,7 +312,7 @@ app.post('/api/admin/session-notes', apiLimiter, async (req, res) => {
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 
-app.post('/api/admin/upload-resource', apiLimiter, upload.single('file'), async (req, res) => {
+app.post('/api/admin/upload-resource', adminAuth, apiLimiter, upload.single('file'), async (req, res) => {
     const { filename, title, mentee_email } = req.body;
     if (!req.file || !filename || !title || !mentee_email) return res.status(400).json({ error: 'File, filename, title and mentee email required.' });
 
@@ -319,7 +335,7 @@ app.post('/api/admin/upload-resource', apiLimiter, upload.single('file'), async 
 });
 
 // Admin: get Supabase storage URL for uploads
-app.get('/api/admin/storage-url', (req, res) => {
+app.get('/api/admin/storage-url', adminAuth, (req, res) => {
     res.json({ url: process.env.SUPABASE_URL + '/storage/v1/object/public/resources/' });
 });
 
@@ -346,6 +362,48 @@ app.post('/api/admin/login', loginLimiter, (req, res) => {
     } else {
         res.status(401).json({ success: false });
     }
+});
+
+// Upload payment screenshot
+app.post('/api/upload-payment-proof', upload.single('screenshot'), async (req, res) => {
+    const { email, message } = req.body;
+    if (!email) return res.status(400).json({ error: "Email required." });
+    if (!req.file && !message) return res.status(400).json({ error: "Screenshot or message required." });
+
+    let screenshotUrl = null;
+    if (req.file) {
+        const filename = "payment-" + Date.now() + ".png";
+        const { error: uploadError } = await supabase.storage
+            .from("resources")
+            .upload(filename, req.file.buffer, { contentType: "image/png", upsert: true });
+        if (uploadError) return res.status(500).json({ error: uploadError.message });
+        screenshotUrl = process.env.SUPABASE_URL + "/storage/v1/object/public/resources/" + filename;
+    }
+
+    const { error: dbError } = await supabase
+        .from("payment_proofs")
+        .insert({ applicant_email: email, screenshot_url: screenshotUrl, message: message || null });
+
+    if (dbError) return res.status(500).json({ error: dbError.message });
+    res.json({ success: true, url: screenshotUrl });
+});
+    
+
+app.get('/api/admin/payment-proofs', adminAuth, apiLimiter, async (req, res) => {
+    const { data, error } = await supabase.from('payment_proofs').select('*').order('uploaded_at', { ascending: false });
+    if (error) return res.status(500).json({ error: 'Failed to fetch proofs.' });
+    res.json(data);
+});
+
+app.post('/api/admin/approve-payment', adminAuth, apiLimiter, async (req, res) => {
+    const { proof_id, email } = req.body;
+    await supabase.from('payment_proofs').update({ status: 'approved' }).eq('id', proof_id);
+    const { data: codes } = await supabase.from('access_codes').select('*').eq('is_used', false).limit(1);
+    if (!codes || !codes.length) return res.status(400).json({ error: 'No access codes available.' });
+    const code = codes[0].code;
+    await supabase.from('mentees').upsert({ email, access_code: code, payment_status: 'verified' }, { onConflict: 'email' });
+    await supabase.from('access_codes').update({ is_used: true }).eq('code', code);
+    res.json({ success: true, code });
 });
 
 // Health check

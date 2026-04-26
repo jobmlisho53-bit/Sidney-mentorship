@@ -22,6 +22,7 @@
         <button onclick="switchTab('applicants')" id="tab-applicants" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: #C9A830; font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid #C9A830;">Applicants</button>
         <button onclick="switchTab('mentees')" id="tab-mentees" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Mentees</button>
         <button onclick="switchTab('codes')" id="tab-codes" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Access Codes</button>
+        <button onclick="switchTab('payments')" id="tab-payments" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Payments</button>
     </div>
     
     <div id="panel-applicants">
@@ -32,6 +33,13 @@
         <div id="menteesList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
     </div>
     
+    <div id="panel-payments" style="display: none;">
+        <div id="paymentsList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
+    </div>
+    
+    </div>
+    </div>
+
     <div id="panel-codes" style="display: none;">
         <div style="margin-bottom: 32px;">
             <button onclick="generateCodes()" class="btn-gold" style="font-size: 0.8rem; padding: 12px 28px;">Generate 5 New Codes</button>
@@ -78,6 +86,13 @@
 </section>
 
 <script>
+const ADMIN_KEY = "sidney2026";
+async function adminFetch(url, opts) {
+    opts = opts || {};
+    opts.headers = opts.headers || {};
+    opts.headers["x-admin-key"] = ADMIN_KEY;
+    return fetch(url, opts);
+}
 function switchTab(tab) {
     document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
     document.querySelectorAll('.admin-tab').forEach(b => {
@@ -90,12 +105,14 @@ function switchTab(tab) {
     if (tab === 'applicants') loadApplicants();
     if (tab === 'mentees') loadMentees();
     if (tab === 'codes') loadCodes();
+    if (tab === 'payments') loadPayments();
+    if (tab === 'payments') loadPayments();
 }
 
 async function loadApplicants() {
     const container = document.getElementById('applicantsList');
     try {
-        const res = await fetch('/api/admin/applicants');
+        const res = await adminFetch('/api/admin/applicants');
         const data = await res.json();
         if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No applicants yet.</p>'; return; }
         container.innerHTML = data.map(a => '<div class="card" style="display: flex; justify-content: space-between; align-items: center;"><div><p style="font-weight: 500;">' + a.full_name + '</p><p style="color: var(--text-muted); font-size: 0.85rem;">' + a.email + (a.phone ? ' · ' + a.phone : '') + '</p><p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">' + (a.trading_experience || 'No experience') + ' · Payment: ' + (a.preferred_payment || 'Not specified') + ' · ' + new Date(a.created_at).toLocaleDateString() + '</p></div><span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ' + (a.status === 'pending' ? '#C9A830' : '#6B8E6B') + ';">' + a.status + '</span></div>').join('');
@@ -105,7 +122,7 @@ async function loadApplicants() {
 async function loadMentees() {
     const container = document.getElementById('menteesList');
     try {
-        const res = await fetch('/api/admin/mentees');
+        const res = await adminFetch('/api/admin/mentees');
         const data = await res.json();
         if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No mentees yet.</p>'; return; }
         container.innerHTML = data.map(m => {
@@ -118,7 +135,7 @@ async function loadMentees() {
 async function loadCodes() {
     const container = document.getElementById('codesList');
     try {
-        const res = await fetch('/api/admin/codes');
+        const res = await adminFetch('/api/admin/codes');
         const codes = await res.json();
         if (!codes.length) { container.innerHTML = '<p style="color: var(--text-muted);">No codes yet.</p>'; return; }
         container.innerHTML = codes.map(c => '<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: var(--proof-bg); border: 1px solid var(--proof-border); border-radius: 4px;"><span style="font-family: monospace; letter-spacing: 2px; font-size: 1rem;">' + c.code + '</span><span style="font-size: 0.8rem; color: ' + (c.used ? '#6B8E6B' : '#C9A830') + ';">' + (c.used ? 'Used' : 'Available') + '</span></div>').join('');
@@ -128,7 +145,7 @@ async function loadCodes() {
 async function generateCodes() {
     var msg = document.getElementById('codeGenMsg'); msg.style.display = 'none';
     try {
-        var res = await fetch('/api/admin/generate-codes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 5 }) });
+        var res = await adminFetch('/api/admin/generate-codes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 5 }) });
         var data = await res.json();
         if (data.success) { msg.textContent = '5 codes generated.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; loadCodes(); }
     } catch (err) { msg.textContent = 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
@@ -137,7 +154,7 @@ async function generateCodes() {
 async function updateStage(email, stage) {
     if (stage < 1 || stage > 3) return;
     try {
-        var res = await fetch('/api/admin/update-stage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, stage: stage }) });
+        var res = await adminFetch('/api/admin/update-stage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, stage: stage }) });
         var data = await res.json();
         if (data.success) loadMentees();
     } catch (err) {}
@@ -149,7 +166,7 @@ async function linkMentee() {
     var msg = document.getElementById('linkMsg'); msg.style.display = 'none';
     if (!email || !code) { msg.textContent = 'Both fields required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
     try {
-        var res = await fetch('/api/admin/link-mentee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, full_name: email.split('@')[0], code: code }) });
+        var res = await adminFetch('/api/admin/link-mentee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, full_name: email.split('@')[0], code: code }) });
         var data = await res.json();
         if (data.success) { msg.textContent = 'Mentee linked.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('linkEmail').value = ''; document.getElementById('linkCode').value = ''; loadMentees(); loadCodes(); }
         else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
@@ -163,7 +180,7 @@ async function addSessionNote() {
     var msg = document.getElementById('noteMsg'); msg.style.display = 'none';
     if (!email || !title) { msg.textContent = 'Email and title required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
     try {
-        var res = await fetch('/api/admin/session-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentee_email: email, title: title, body: body }) });
+        var res = await adminFetch('/api/admin/session-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentee_email: email, title: title, body: body }) });
         var data = await res.json();
         if (data.success) { msg.textContent = 'Note saved.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('noteEmail').value = ''; document.getElementById('noteTitle').value = ''; document.getElementById('noteBody').value = ''; }
         else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
@@ -187,7 +204,7 @@ async function uploadResource() {
     formData.append('title', type);
     formData.append('mentee_email', email);
     try {
-        var res = await fetch('/api/admin/upload-resource', { method: 'POST', body: formData });
+        var res = await adminFetch('/api/admin/upload-resource', { method: 'POST', body: formData });
         var data = await res.json();
         if (data.success) { msg.textContent = 'Uploaded successfully.'; msg.style.color = '#6B8E6B'; fileInput.value = ''; document.getElementById('resourceType').value = ''; document.getElementById('resourceMentee').value = ''; }
         else { msg.textContent = data.error || 'Upload failed.'; msg.style.color = '#B33A3A'; }
@@ -195,6 +212,50 @@ async function uploadResource() {
     msg.style.display = 'inline';
 }
 
+async function loadPayments() {
+    const container = document.getElementById("paymentsList");
+    try {
+        const res = await adminFetch("/api/admin/payment-proofs");
+        const data = await res.json();
+        if (!data.length) {
+            container.innerHTML = '<p style="color: var(--text-muted);">No payment proofs yet.</p>';
+            return;
+        }
+        container.innerHTML = data.map(function(p) {
+            var html = '<div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">';
+            html += '<div>';
+            html += '<p style="font-weight: 500;">' + p.applicant_email + '</p>';
+            html += '<p style="color: var(--text-muted); font-size: 0.78rem;">' + new Date(p.uploaded_at).toLocaleString() + '</p>';
+            html += '</div>';
+            if (p.screenshot_url) {
+                html += '<a href="' + p.screenshot_url + '" target="_blank" style="font-size: 0.8rem; color: #C9A830; text-decoration: none;">View Screenshot</a>';
+            } else {
+                html += '<span style="font-size: 0.8rem; color: var(--text-muted);">Message only</span>';
+            }
+            html += '<button onclick="approvePayment(\'' + p.id + '\', \'' + p.applicant_email + '\')" style="padding: 6px 16px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.75rem; border-radius: 3px;">Approve</button>';
+            html += '</div>';
+            return html;
+        }).join("");
+    } catch (err) {
+        container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>';
+    }
+}
+
+async function approvePayment(proofId, email) {
+    try {
+        var res = await adminFetch("/api/admin/approve-payment", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ proof_id: proofId, email: email })
+        });
+        var data = await res.json();
+        if (data.success) {
+            alert("Approved. Access code: " + data.code);
+            loadPayments();
+            loadMentees();
+        }
+    } catch (err) {}
+}
 loadApplicants();
 </script>
 
