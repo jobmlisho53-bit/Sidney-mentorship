@@ -10,6 +10,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// ============ CONFIG ============
+const CALLBACK_URL = 'https://asksidney.vercel.app/payment-verify.html';
+const ALLOWED_AMOUNTS = [30, 600]; // $30 roadmap, $600 full course
+const CURRENCY = 'USD';
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -32,6 +37,15 @@ async function getOrCreateCode() {
         codes = freshCodes;
     }
     return codes && codes.length ? codes[0].code : null;
+}
+
+async function isReferenceUsed(reference) {
+    const { data } = await supabase.from('payment_logs').select('*').eq('reference', reference).limit(1);
+    return data && data.length > 0;
+}
+
+async function markReferenceUsed(reference, email, amount) {
+    await supabase.from('payment_logs').insert({ reference, email, amount, status: 'verified' });
 }
 
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Too many login attempts.' } });
@@ -73,10 +87,14 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
 app.post('/api/paystack/initialize', async (req, res) => {
     const { email, amount } = req.body;
     if (!email || !amount) return res.status(400).json({ error: 'Email and amount required.' });
-    const baseUrl = process.env.BASE_URL || 'https://asksidney.vercel.app';
-    const callbackUrl = baseUrl + '/payment-verify.html';
+
+    // Validate amount
+    if (!ALLOWED_AMOUNTS.includes(parseInt(amount))) {
+        return res.status(400).json({ error: 'Invalid amount.' });
+    }
+
     try {
-        const result = await paystack.initializePayment(email, amount, callbackUrl);
+        const result = await paystack.initializePayment(email, amount, CALLBACK_URL, CURRENCY);
         if (result.status) return res.json({ success: true, url: result.data.authorization_url, reference: result.data.reference });
         res.status(400).json({ error: result.message });
     } catch (err) { res.status(500).json({ error: 'Payment init failed.' }); }
@@ -85,21 +103,72 @@ app.post('/api/paystack/initialize', async (req, res) => {
 app.get('/api/paystack/verify', async (req, res) => {
     const { reference } = req.query;
     if (!reference) return res.status(400).json({ error: 'Reference required.' });
+
+    // Prevent replay
+    if (await isReferenceUsed(reference)) {
+        return res.json({ success: false, message: 'This payment has already been verified.' });
+    }
+
     try {
         const result = await paystack.verifyPayment(reference);
-        if (!result.status || result.data.status !== 'success') return res.json({ success: false, message: 'Payment not verified.' });
+        if (!result.status || result.data.status !== 'success') {
+            return res.json({ success: false, message: 'Payment not verified.' });
+        }
 
         const email = result.data.customer.email;
         const amount = result.data.amount / 100;
-        const code = await getOrCreateCode();
-        if (!code) return res.json({ success: false, message: 'Could not generate access code. Contact Sidney.' });
 
-        const { error: linkError } = await supabase.from('mentees').upsert({ email, access_code: code, payment_status: 'verified', payment_amount: amount, payment_method: 'paystack' }, { onConflict: 'email' });
+        // Get name from applicant record
+        const { data: applicant } = await supabase.from('applicants').select('full_name').eq('email', email).order('created_at', { ascending: false }).limit(1);
+        const fullName = applicant && applicant.length ? applicant[0].full_name : email.split('@')[0];
+
+        const code = await getOrCreateCode();
+        if (!code) return res.json({ success: false, message: 'Could not generate access code.' });
+
+        const { error: linkError } = await supabase.from('mentees').upsert({
+            email,
+            full_name: fullName,
+            access_code: code,
+            payment_status: 'verified',
+            payment_amount: amount,
+            payment_method: 'paystack'
+        }, { onConflict: 'email' });
+
         if (linkError) return res.json({ success: false, message: 'Failed to link code.' });
 
         await supabase.from('access_codes').update({ is_used: true }).eq('code', code);
-        res.json({ success: true, code });
+        await markReferenceUsed(reference, email, amount);
+
+        res.json({ success: true, code, name: fullName });
     } catch (err) { res.status(500).json({ error: 'Verification failed.' }); }
+});
+
+// ============ PAYSTACK WEBHOOK ============
+app.post('/api/paystack/webhook', (req, res) => {
+    const hash = require('crypto').createHmac('sha512', process.env.PAYSTACK_SECRET_KEY).update(JSON.stringify(req.body)).digest('hex');
+    if (hash !== req.headers['x-paystack-signature']) return res.status(401).json({ error: 'Invalid signature.' });
+
+    const event = req.body;
+    if (event.event === 'charge.success') {
+        const email = event.data.customer.email;
+        const amount = event.data.amount / 100;
+        const reference = event.data.reference;
+
+        isReferenceUsed(reference).then(used => {
+            if (used) return;
+            getOrCreateCode().then(code => {
+                if (!code) return;
+                supabase.from('applicants').select('full_name').eq('email', email).order('created_at', { ascending: false }).limit(1).then(({ data: applicant }) => {
+                    const fullName = applicant && applicant.length ? applicant[0].full_name : email.split('@')[0];
+                    supabase.from('mentees').upsert({ email, full_name: fullName, access_code: code, payment_status: 'verified', payment_amount: amount, payment_method: 'paystack' }, { onConflict: 'email' }).then(() => {
+                        supabase.from('access_codes').update({ is_used: true }).eq('code', code);
+                        markReferenceUsed(reference, email, amount);
+                    });
+                });
+            });
+        });
+    }
+    res.sendStatus(200);
 });
 
 // ============ PORTAL ACCESS ============
