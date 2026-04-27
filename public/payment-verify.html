@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verifying Payment...</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<section class="section" style="text-align: center; padding-top: 140px;">
+    <h1 style="font-size: 2rem; font-weight: 300;">Verifying Your <span class="gold-text">Payment</span></h1>
+    <p style="color: var(--text-muted); margin-top: 16px;" id="status">Please wait...</p>
+    <div id="result" style="margin-top: 24px; display: none;">
+        <p style="font-size: 1.2rem; color: #6B8E6B;" id="successMsg"></p>
+        <p style="color: var(--text-muted); margin-top: 8px;" id="codeDisplay"></p>
+        <a href="/portal" class="btn-gold" style="margin-top: 20px; display: inline-block;">Go to Portal</a>
+    </div>
+    <div id="error" style="margin-top: 24px; display: none;">
+        <p style="color: #B33A3A;">Payment verification failed. Contact Sidney.</p>
+    </div>
+</section>
+
+<script>
+async function verify() {
+    var url = new URL(window.location.href);
+    var reference = url.searchParams.get('reference');
+    var email = url.searchParams.get('email');
+    
+    if (!reference) {
+        document.getElementById('status').textContent = 'No payment reference found.';
+        return;
+    }
+    
+    try {
+        var res = await fetch('/api/paystack/verify?reference=' + reference);
+        var data = await res.json();
+        
+        if (data.success && data.code) {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('result').style.display = 'block';
+            document.getElementById('successMsg').textContent = 'Payment verified. Welcome to ASKSIDNEY.';
+            document.getElementById('codeDisplay').textContent = 'Your access code: ' + data.code;
+        } else {
+            document.getElementById('status').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+        }
+    } catch (err) {
+        document.getElementById('status').textContent = 'Verification error. Contact Sidney.';
+    }
+}
+
+verify();
+</script>
+</body>
+</html>
