@@ -1,26 +1,25 @@
-/* ASKSIDNEY — Premium Gold & Warm White */
+/* ASKSIDNEY — Premium Blue & White */
 
 :root {
-    --gold: #C9A830;
-    --gold-light: #D4AF37;
-    --gold-dark: #9A7B1F;
-    --gold-gradient: linear-gradient(135deg, #BF953F, #FCF6B5, #B38728, #FBF5B7, #AA771C);
+    --blue: #1E3A5F;
+    --blue-light: #2B5F8E;
+    --blue-dark: #0F2440;
+    --blue-gradient: linear-gradient(135deg, #0F2440, #2B5F8E, #1E3A5F, #3A7BD5);
 }
 
-/* Light mode — warm ivory, not pure white */
+/* Light mode */
 body {
     --bg: #FDFBF7;
-    --bg-secondary: #F8F5ED;
-    --text: #2B2B2B;
+    --bg-secondary: #F5F2EC;
+    --text: #1A1A1A;
     --text-muted: rgba(0,0,0,0.48);
     --card-bg: #FFFFFF;
     --card-border: rgba(0,0,0,0.06);
     --card-shadow: 0 1px 3px rgba(0,0,0,0.04);
-    --nav-text: #2B2B2B;
+    --nav-text: #1A1A1A;
     --footer-border: rgba(0,0,0,0.05);
-    --proof-bg: #FDF9EF;
-    --proof-border: rgba(201,168,48,0.25);
-    --divider-opacity: 0.2;
+    --proof-bg: #F0F4FA;
+    --proof-border: rgba(30,58,95,0.2);
     
     background-color: var(--bg);
     color: var(--text);
@@ -30,27 +29,22 @@ body {
     transition: background-color 0.3s ease, color 0.3s ease;
 }
 
-/* Dark mode — deep charcoal, not pure black */
+/* Dark mode */
 body.dark {
-    --bg: #141414;
-    --bg-secondary: #1A1A1A;
-    --text: #E8E6E0;
-    --text-muted: rgba(232,230,224,0.45);
-    --card-bg: #1A1A1A;
+    --bg: #0D1117;
+    --bg-secondary: #161B22;
+    --text: #E6EDF3;
+    --text-muted: rgba(230,237,243,0.45);
+    --card-bg: #161B22;
     --card-border: rgba(255,255,255,0.06);
     --card-shadow: none;
-    --nav-text: #E8E6E0;
+    --nav-text: #E6EDF3;
     --footer-border: rgba(255,255,255,0.05);
-    --proof-bg: rgba(201,168,48,0.04);
-    --proof-border: rgba(201,168,48,0.15);
-    --divider-opacity: 0.15;
+    --proof-bg: rgba(30,58,95,0.15);
+    --proof-border: rgba(43,95,142,0.2);
 }
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+* { margin: 0; padding: 0; box-sizing: border-box; }
 
 h1, h2, h3, h4 {
     font-family: 'Helvetica Neue', 'Arial', sans-serif;
@@ -59,7 +53,7 @@ h1, h2, h3, h4 {
 }
 
 .gold-text {
-    background: var(--gold-gradient);
+    background: var(--blue-gradient);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -68,15 +62,15 @@ h1, h2, h3, h4 {
 .gold-line {
     width: 50px;
     height: 2px;
-    background: var(--gold-gradient);
+    background: var(--blue-gradient);
     margin: 18px 0;
 }
 
 .btn-gold {
     display: inline-block;
     padding: 16px 44px;
-    background: var(--gold-gradient);
-    color: #1A1A1A;
+    background: var(--blue-gradient);
+    color: #FFFFFF;
     font-weight: 600;
     font-size: 0.9rem;
     text-decoration: none;
@@ -89,9 +83,9 @@ h1, h2, h3, h4 {
 }
 
 .btn-gold:hover {
-    filter: brightness(1.06);
+    filter: brightness(1.1);
     transform: translateY(-2px);
-    box-shadow: 0 12px 40px rgba(180,140,40,0.25);
+    box-shadow: 0 12px 40px rgba(30,58,95,0.35);
 }
 
 .card {
@@ -104,7 +98,7 @@ h1, h2, h3, h4 {
 }
 
 .card:hover {
-    border-color: rgba(201,168,48,0.35);
+    border-color: rgba(30,58,95,0.35);
     transform: translateY(-4px);
     box-shadow: 0 8px 30px rgba(0,0,0,0.06);
 }
@@ -118,7 +112,7 @@ h1, h2, h3, h4 {
 .divider {
     border: none;
     height: 1px;
-    background: linear-gradient(to right, transparent, rgba(201,168,48, var(--divider-opacity)), transparent);
+    background: linear-gradient(to right, transparent, rgba(30,58,95,0.25), transparent);
     margin: 70px 0;
 }
 
@@ -133,7 +127,7 @@ h1, h2, h3, h4 {
 .proof-card .amount {
     font-size: 2.4rem;
     font-weight: 400;
-    color: #C9A830;
+    color: var(--blue-light);
     letter-spacing: -1px;
 }
 
@@ -145,7 +139,6 @@ footer {
     border-top: 1px solid var(--footer-border);
 }
 
-/* Theme toggle */
 .theme-toggle {
     background: none;
     border: 1px solid var(--card-border);
@@ -160,74 +153,25 @@ footer {
 }
 
 .theme-toggle:hover {
-    border-color: rgba(201,168,48,0.45);
-    color: #C9A830;
+    border-color: var(--blue-light);
+    color: var(--blue-light);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
-    .card-grid {
-        grid-template-columns: 1fr !important;
-    }
-    
-    h1 {
-        font-size: 2.4rem !important;
-    }
-    
-    h2 {
-        font-size: 2rem !important;
-    }
-    
-    .section {
-        padding: 60px 18px;
-    }
-    
-    nav {
-        padding: 18px 18px !important;
-    }
-    
-    nav a {
-        margin-left: 18px !important;
-        font-size: 0.75rem !important;
-    }
+    .card-grid { grid-template-columns: 1fr !important; }
+    h1 { font-size: 2.4rem !important; }
+    h2 { font-size: 2rem !important; }
+    .section { padding: 60px 18px; }
+    nav { padding: 18px 18px !important; }
+    nav a { margin-left: 18px !important; font-size: 0.75rem !important; }
 }
 
-/* Mobile nav fixes */
 @media (max-width: 600px) {
-    nav {
-        flex-wrap: wrap;
-        gap: 12px;
-        justify-content: center;
-        text-align: center;
-    }
-    
-    nav > div:last-child {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 14px;
-    }
-    
-    nav a {
-        margin-left: 0 !important;
-    }
-    
-    .theme-toggle {
-        display: inline-block;
-        margin-top: 4px;
-    }
-}
-
-/* Admin mobile fixes */
-@media (max-width: 600px) {
-    .admin-tab {
-        padding: 10px 14px !important;
-        font-size: 0.7rem !important;
-        letter-spacing: 0.5px !important;
-    }
-    .section {
-        padding: 30px 12px !important;
-    }
-    .card {
-        padding: 20px 16px !important;
-    }
+    .admin-tab { padding: 10px 14px !important; font-size: 0.7rem !important; letter-spacing: 0.5px !important; }
+    .section { padding: 30px 12px !important; }
+    .card { padding: 20px 16px !important; }
+    nav { flex-wrap: wrap; gap: 12px; justify-content: center; text-align: center; }
+    nav > div:last-child { flex-wrap: wrap; justify-content: center; gap: 14px; }
+    nav a { margin-left: 0 !important; }
+    .theme-toggle { display: inline-block; margin-top: 4px; }
 }

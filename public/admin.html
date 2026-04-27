@@ -3,260 +3,124 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ASKSIDNEY | Admin</title>
+    <title>ASKSIDNEY | Mentee Portal</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        .progress-bar { width: 100%; height: 6px; background: var(--card-border); border-radius: 3px; margin-top: 12px; overflow: hidden; }
+        .progress-fill { height: 100%; background: var(--blue-gradient); border-radius: 3px; transition: width 0.5s ease; }
+        .stage-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .stage-done { background: var(--blue-light); }
+        .stage-current { background: var(--blue-light); box-shadow: 0 0 0 3px rgba(30,58,95,0.2); }
+        .stage-pending { background: var(--card-border); }
+        .resource-link { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid var(--card-border); color: var(--text); text-decoration: none; }
+        .resource-link:hover { color: var(--blue-light); }
+        .resource-link:last-child { border-bottom: none; }
+    </style>
 </head>
 <body>
 
-<section class="section">
-    
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 48px;">
-        <div>
-            <h1 style="font-size: 2rem; font-weight: 300;"><span class="gold-text">Sidney</span> Dashboard</h1>
-            <p style="color: var(--text-muted); margin-top: 4px;">Manage applications, mentees, access codes, notes, and resources.</p>
-        </div>
-        <button onclick="location.reload()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 8px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Refresh</button>
+<section id="lockScreen" class="section" style="text-align: center; padding-top: 140px;">
+    <p style="font-size: 0.75rem; letter-spacing: 3px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 16px;">Mentee Portal</p>
+    <h1 style="font-size: 2.6rem; font-weight: 300; margin-bottom: 16px;">Welcome to Your <span class="gold-text">Blueprint</span></h1>
+    <p style="color: var(--text-muted); max-width: 460px; margin: 0 auto 40px auto; font-size: 1rem;">Enter the access code Sidney sent you after payment.</p>
+    <div style="max-width: 400px; margin: 0 auto;">
+        <input type="text" id="accessCode" placeholder="SIDNEY-XXXXXXXX" autocomplete="off" style="width: 100%; padding: 14px 18px; font-size: 0.95rem; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; text-align: center; letter-spacing: 2px; outline: none;">
+        <button onclick="verifyAccess()" style="margin-top: 16px; width: 100%;" class="btn-gold">Access Portal</button>
     </div>
-    
-    <div style="display: flex; gap: 0; margin-bottom: 40px; border-bottom: 1px solid var(--card-border);">
-        <button onclick="switchTab('applicants')" id="tab-applicants" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: #C9A830; font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid #C9A830;">Applicants</button>
-        <button onclick="switchTab('mentees')" id="tab-mentees" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Mentees</button>
-        <button onclick="switchTab('codes')" id="tab-codes" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Access Codes</button>
-        <button onclick="switchTab('payments')" id="tab-payments" class="admin-tab" style="padding: 12px 28px; background: none; border: none; color: var(--text-muted); font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; border-bottom: 2px solid transparent;">Payments</button>
-    </div>
-    
-    <div id="panel-applicants">
-        <div id="applicantsList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
-    </div>
-    
-    <div id="panel-mentees" style="display: none;">
-        <div id="menteesList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
-    </div>
-    
-    <div id="panel-payments" style="display: none;">
-        <div id="paymentsList" style="display: grid; gap: 16px;"><p style="color: var(--text-muted);">Loading...</p></div>
-    </div>
-    
-    </div>
-    </div>
+    <p id="errorMsg" style="color: #B33A3A; margin-top: 16px; font-size: 0.85rem; display: none;"></p>
+    <p id="loadingMsg" style="color: var(--text-muted); margin-top: 16px; font-size: 0.85rem; display: none;">Verifying...</p>
+    <p style="margin-top: 32px; font-size: 0.8rem; color: var(--text-muted);">No access code yet? <a href="/" style="color: var(--blue-light); text-decoration: none;">Apply for mentorship</a></p>
+</section>
 
-    <div id="panel-codes" style="display: none;">
-        <div style="margin-bottom: 32px;">
-            <button onclick="generateCodes()" class="btn-gold" style="font-size: 0.8rem; padding: 12px 28px;">Generate 5 New Codes</button>
-            <span id="codeGenMsg" style="margin-left: 16px; font-size: 0.85rem; color: #C9A830; display: none;"></span>
+<section id="portalContent" style="display: none;" class="section">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 48px; flex-wrap: wrap; gap: 20px;">
+        <div>
+            <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 8px;">Your Dashboard</p>
+            <h2 style="font-size: 2rem; font-weight: 300;">Welcome, <span id="menteeName" class="gold-text">Trader</span></h2>
+            <p style="color: var(--text-muted); margin-top: 4px; font-size: 0.9rem;">Stage <span id="currentStage">1</span> of 3</p>
         </div>
-        <div id="codesList" style="display: grid; gap: 12px;"><p style="color: var(--text-muted);">Loading...</p></div>
-        
-        <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
-            <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Link Access Code to Mentee</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
-                <input type="email" id="linkEmail" placeholder="Mentee email" style="padding: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-                <input type="text" id="linkCode" placeholder="Access code" style="padding: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-            </div>
-            <button onclick="linkMentee()" style="margin-top: 16px; padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Link Mentee</button>
-            <span id="linkMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
-        </div>
-        
-        <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
-            <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Add Session Note for Mentee</h3>
-            <input type="email" id="noteEmail" placeholder="Mentee email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-            <input type="text" id="noteTitle" placeholder="Note title" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-            <textarea id="noteBody" placeholder="Note details..." rows="3" style="width: 100%; padding: 12px; margin-bottom: 16px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none; resize: vertical;"></textarea>
-            <button onclick="addSessionNote()" style="padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Save Note</button>
-            <span id="noteMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
-        </div>
-        
-        <div style="margin-top: 40px; padding: 28px; border: 1px solid var(--card-border); border-radius: 4px;">
-            <h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Upload Resource for Mentee</h3>
-            <p style="color: var(--text-muted); font-size: 0.8rem; margin-bottom: 16px;">Select a mentee, resource type, and PDF. They will see it in their portal instantly.</p>
-            <input type="email" id="resourceMentee" placeholder="Mentee email" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-            <select id="resourceType" style="width: 100%; padding: 12px; margin-bottom: 12px; border: 1px solid var(--card-border); background: var(--card-bg); color: var(--text); border-radius: 3px; font-size: 0.9rem; outline: none;">
-                <option value="">Select resource type</option>
-                <option value="Trade Plan Template">Trade Plan Template</option>
-                <option value="Risk Management Worksheet">Risk Management Worksheet</option>
-                <option value="Trade Journal Spreadsheet">Trade Journal Spreadsheet</option>
-                <option value="Pre-Session Checklist">Pre-Session Checklist</option>
-            </select>
-            <input type="file" id="resourceFile" accept=".pdf" style="display: block; width: 100%; padding: 10px 0; margin-bottom: 16px; font-size: 0.85rem; color: var(--text);">
-            <button onclick="uploadResource()" style="padding: 12px 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.85rem; letter-spacing: 1px; border-radius: 3px;">Upload Resource</button>
-            <span id="uploadMsg" style="margin-left: 16px; font-size: 0.85rem; display: none;"></span>
+        <div style="display: flex; gap: 12px; align-items: center;">
+            <a href="https://wa.me/254790747026" target="_blank" style="display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background: #25D366; color: #FFFFFF; text-decoration: none; border-radius: 3px; font-size: 0.85rem;">Message Sidney</a>
+            <button onclick="logout()" style="background: none; border: 1px solid var(--card-border); color: var(--text-muted); padding: 10px 20px; cursor: pointer; font-size: 0.8rem; letter-spacing: 1px; border-radius: 3px;">Logout</button>
         </div>
     </div>
     
+    <div class="card" style="margin-bottom: 40px;">
+        <p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 20px;">Your Progress</p>
+        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+            <div style="text-align: center; flex: 1;"><span class="stage-dot" id="stageDot1"></span><p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 1</p><p style="font-size: 0.7rem; color: var(--text-muted);">Foundation & Strategy</p></div>
+            <div style="text-align: center; flex: 1;"><span class="stage-dot" id="stageDot2"></span><p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 2</p><p style="font-size: 0.7rem; color: var(--text-muted);">The Business Plan</p></div>
+            <div style="text-align: center; flex: 1;"><span class="stage-dot" id="stageDot3"></span><p style="font-size: 0.8rem; margin-top: 8px; color: var(--text);">Stage 3</p><p style="font-size: 0.7rem; color: var(--text-muted);">The Holy Grail</p></div>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width: 0%;"></div></div>
+        <p style="text-align: center; margin-top: 24px; font-size: 0.85rem; color: var(--text-muted);" id="stageMessage"></p>
+    </div>
+    
+    <div class="card-grid" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-bottom: 40px;">
+        <div class="card"><p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 12px;">Your Blueprint</p><p style="color: var(--text-muted); font-size: 0.9rem;">A tailored strategy built around your strengths.</p><p style="margin-top: 16px; font-size: 0.8rem; color: var(--blue-light);" id="blueprintStatus">In progress</p></div>
+        <div class="card"><p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 12px;">Next Session</p><p style="color: var(--text-muted); font-size: 0.9rem;">Schedule your one-on-one call.</p><a href="https://wa.me/254790747026?text=Hi%20Sidney,%20I%20want%20to%20book%20my%20next%20session." target="_blank" style="display: inline-block; margin-top: 16px; font-size: 0.8rem; color: var(--blue-light); text-decoration: none;">Book via WhatsApp</a></div>
+        <div class="card"><p style="font-size: 0.7rem; letter-spacing: 2px; text-transform: uppercase; color: var(--blue-light); margin-bottom: 12px;">Action Items</p><ul style="list-style: none; color: var(--text-muted); font-size: 0.85rem; line-height: 2;" id="actionItems"><li>Complete your trade journal</li><li>Review Stage 1 materials</li><li>Prepare questions for next session</li></ul></div>
+    </div>
+    
+    <div class="card" style="margin-bottom: 24px;"><h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Session Notes</h3><div id="sessionNotes"><div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Loading notes...</span></div></div></div>
+    <div class="card"><h3 style="font-size: 1.1rem; font-weight: 400; margin-bottom: 20px;">Your Resources</h3><div id="resourcesList"><div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Loading resources...</span></div></div></div>
 </section>
 
 <script>
-const ADMIN_KEY = "sidney2026";
-async function adminFetch(url, opts) {
-    opts = opts || {};
-    opts.headers = opts.headers || {};
-    opts.headers["x-admin-key"] = ADMIN_KEY;
-    return fetch(url, opts);
-}
-function switchTab(tab) {
-    document.querySelectorAll('[id^="panel-"]').forEach(p => p.style.display = 'none');
-    document.querySelectorAll('.admin-tab').forEach(b => {
-        b.style.color = 'var(--text-muted)';
-        b.style.borderBottom = '2px solid transparent';
-    });
-    document.getElementById('panel-' + tab).style.display = 'block';
-    document.getElementById('tab-' + tab).style.color = '#C9A830';
-    document.getElementById('tab-' + tab).style.borderBottom = '2px solid #C9A830';
-    if (tab === 'applicants') loadApplicants();
-    if (tab === 'mentees') loadMentees();
-    if (tab === 'codes') loadCodes();
-    if (tab === 'payments') loadPayments();
-    if (tab === 'payments') loadPayments();
+async function verifyAccess() {
+    var code = document.getElementById('accessCode').value.trim();
+    var errorMsg = document.getElementById('errorMsg'); var loadingMsg = document.getElementById('loadingMsg');
+    errorMsg.style.display = 'none';
+    if (!code) { errorMsg.textContent = 'Please enter your access code.'; errorMsg.style.display = 'block'; return; }
+    loadingMsg.style.display = 'block';
+    try {
+        var response = await fetch('/api/verify-access', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) });
+        var data = await response.json(); loadingMsg.style.display = 'none';
+        if (data.valid) { unlockPortal(data.mentee); }
+        else { errorMsg.textContent = data.message || 'Invalid access code.'; errorMsg.style.display = 'block'; }
+    } catch (err) { loadingMsg.style.display = 'none'; errorMsg.textContent = 'Connection error.'; errorMsg.style.display = 'block'; }
 }
 
-async function loadApplicants() {
-    const container = document.getElementById('applicantsList');
-    try {
-        const res = await adminFetch('/api/admin/applicants');
-        const data = await res.json();
-        if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No applicants yet.</p>'; return; }
-        container.innerHTML = data.map(a => '<div class="card" style="display: flex; justify-content: space-between; align-items: center;"><div><p style="font-weight: 500;">' + a.full_name + '</p><p style="color: var(--text-muted); font-size: 0.85rem;">' + a.email + (a.phone ? ' · ' + a.phone : '') + '</p><p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">' + (a.trading_experience || 'No experience') + ' · Payment: ' + (a.preferred_payment || 'Not specified') + ' · ' + new Date(a.created_at).toLocaleDateString() + '</p></div><span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ' + (a.status === 'pending' ? '#C9A830' : '#6B8E6B') + ';">' + a.status + '</span></div>').join('');
-    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
+function unlockPortal(mentee) {
+    document.getElementById('lockScreen').style.display = 'none';
+    document.getElementById('portalContent').style.display = 'block';
+    document.getElementById('menteeName').textContent = mentee.full_name || 'Trader';
+    var stage = mentee.current_stage || 1;
+    document.getElementById('currentStage').textContent = stage;
+    updateProgress(stage);
+    loadSessionNotes(mentee.email);
+    loadResources(mentee.email);
 }
 
-async function loadMentees() {
-    const container = document.getElementById('menteesList');
-    try {
-        const res = await adminFetch('/api/admin/mentees');
-        const data = await res.json();
-        if (!data.length) { container.innerHTML = '<p style="color: var(--text-muted);">No mentees yet.</p>'; return; }
-        container.innerHTML = data.map(m => {
-            var s = m.current_stage || 1;
-            return '<div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;"><div style="flex: 1; min-width: 200px;"><p style="font-weight: 500;">' + (m.full_name || 'Unnamed') + '</p><p style="color: var(--text-muted); font-size: 0.85rem;">' + m.email + ' · Stage ' + s + '</p><p style="color: var(--text-muted); font-size: 0.78rem; margin-top: 4px;">Code: ' + (m.access_code || 'None') + ' · Portal: ' + (m.portal_accessed ? 'Yes' : 'No') + ' · ' + new Date(m.created_at).toLocaleDateString() + '</p></div><div style="display: flex; align-items: center; gap: 10px;"><button onclick="updateStage(\'' + m.email + '\', ' + (s - 1) + ')" style="width: 28px; height: 28px; background: none; border: 1px solid var(--card-border); color: var(--text-muted); cursor: pointer; border-radius: 3px; font-size: 0.9rem;"' + (s <= 1 ? ' disabled' : '') + '>-</button><span style="font-size: 0.9rem; font-weight: 500; min-width: 20px; text-align: center;">' + s + '</span><button onclick="updateStage(\'' + m.email + '\', ' + (s + 1) + ')" style="width: 28px; height: 28px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; border-radius: 3px; font-size: 0.9rem;"' + (s >= 3 ? ' disabled' : '') + '>+</button></div><span style="font-size: 0.7rem; letter-spacing: 1px; text-transform: uppercase; color: ' + (m.payment_status === 'verified' ? '#6B8E6B' : '#C9A830') + ';">' + m.payment_status + '</span></div>';
-        }).join('');
-    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
+function updateProgress(stage) {
+    var dot1 = document.getElementById('stageDot1'); var dot2 = document.getElementById('stageDot2'); var dot3 = document.getElementById('stageDot3');
+    var message = document.getElementById('stageMessage');
+    dot1.className = 'stage-dot'; dot2.className = 'stage-dot'; dot3.className = 'stage-dot';
+    if (stage === 1) { dot1.className = 'stage-dot stage-current'; dot2.className = 'stage-dot stage-pending'; dot3.className = 'stage-dot stage-pending'; document.getElementById('progressFill').style.width = '5%'; message.textContent = 'Building your foundation.'; document.getElementById('blueprintStatus').textContent = 'In progress — Session 1 focus'; }
+    else if (stage === 2) { dot1.className = 'stage-dot stage-done'; dot2.className = 'stage-dot stage-current'; dot3.className = 'stage-dot stage-pending'; document.getElementById('progressFill').style.width = '38%'; message.textContent = 'You have a strategy. Now extract consistent money.'; document.getElementById('blueprintStatus').textContent = 'Completed — Refining your plan'; }
+    else if (stage === 3) { dot1.className = 'stage-dot stage-done'; dot2.className = 'stage-dot stage-done'; dot3.className = 'stage-dot stage-current'; document.getElementById('progressFill').style.width = '72%'; message.textContent = 'Mastering your mind for long-term consistency.'; document.getElementById('blueprintStatus').textContent = 'Established — Optimizing execution'; }
 }
 
-async function loadCodes() {
-    const container = document.getElementById('codesList');
+async function loadSessionNotes(email) {
+    var container = document.getElementById('sessionNotes');
     try {
-        const res = await adminFetch('/api/admin/codes');
-        const codes = await res.json();
-        if (!codes.length) { container.innerHTML = '<p style="color: var(--text-muted);">No codes yet.</p>'; return; }
-        container.innerHTML = codes.map(c => '<div style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: var(--proof-bg); border: 1px solid var(--proof-border); border-radius: 4px;"><span style="font-family: monospace; letter-spacing: 2px; font-size: 1rem;">' + c.code + '</span><span style="font-size: 0.8rem; color: ' + (c.used ? '#6B8E6B' : '#C9A830') + ';">' + (c.used ? 'Used' : 'Available') + '</span></div>').join('');
-    } catch (err) { container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>'; }
+        var res = await fetch('/api/session-notes?email=' + encodeURIComponent(email)); var notes = await res.json();
+        if (!notes.length) { container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">No session notes yet.</span></div>'; return; }
+        container.innerHTML = notes.map(n => '<div class="resource-link"><div><p style="font-weight: 500;">' + n.title + '</p><p style="color: var(--text-muted); font-size: 0.8rem;">' + (n.body || '') + '</p></div><span style="font-size: 0.7rem; color: var(--text-muted);">' + new Date(n.created_at).toLocaleDateString() + '</span></div>').join('');
+    } catch (err) { container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Could not load notes.</span></div>'; }
 }
 
-async function generateCodes() {
-    var msg = document.getElementById('codeGenMsg'); msg.style.display = 'none';
+async function loadResources(email) {
+    var container = document.getElementById('resourcesList');
     try {
-        var res = await adminFetch('/api/admin/generate-codes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ count: 5 }) });
-        var data = await res.json();
-        if (data.success) { msg.textContent = '5 codes generated.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; loadCodes(); }
-    } catch (err) { msg.textContent = 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
+        var res = await fetch('/api/resources?email=' + encodeURIComponent(email)); var resources = await res.json();
+        if (!resources.length) { container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">No resources uploaded yet.</span></div>'; return; }
+        container.innerHTML = resources.map(r => '<a href="https://betjzouqrqlxmauxdkic.supabase.co/storage/v1/object/public/resources/' + r.filename + '" target="_blank" class="resource-link"><span>' + r.title + '</span><span style="font-size: 0.75rem; color: var(--blue-light);">Download</span></a>').join('');
+    } catch (err) { container.innerHTML = '<div class="resource-link"><span style="color: var(--text-muted); font-size: 0.9rem;">Could not load resources.</span></div>'; }
 }
 
-async function updateStage(email, stage) {
-    if (stage < 1 || stage > 3) return;
-    try {
-        var res = await adminFetch('/api/admin/update-stage', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, stage: stage }) });
-        var data = await res.json();
-        if (data.success) loadMentees();
-    } catch (err) {}
-}
-
-async function linkMentee() {
-    var email = document.getElementById('linkEmail').value.trim();
-    var code = document.getElementById('linkCode').value.trim();
-    var msg = document.getElementById('linkMsg'); msg.style.display = 'none';
-    if (!email || !code) { msg.textContent = 'Both fields required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
-    try {
-        var res = await adminFetch('/api/admin/link-mentee', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ email: email, full_name: email.split('@')[0], code: code }) });
-        var data = await res.json();
-        if (data.success) { msg.textContent = 'Mentee linked.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('linkEmail').value = ''; document.getElementById('linkCode').value = ''; loadMentees(); loadCodes(); }
-        else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
-    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
-}
-
-async function addSessionNote() {
-    var email = document.getElementById('noteEmail').value.trim();
-    var title = document.getElementById('noteTitle').value.trim();
-    var body = document.getElementById('noteBody').value.trim();
-    var msg = document.getElementById('noteMsg'); msg.style.display = 'none';
-    if (!email || !title) { msg.textContent = 'Email and title required.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
-    try {
-        var res = await adminFetch('/api/admin/session-notes', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mentee_email: email, title: title, body: body }) });
-        var data = await res.json();
-        if (data.success) { msg.textContent = 'Note saved.'; msg.style.color = '#6B8E6B'; msg.style.display = 'inline'; document.getElementById('noteEmail').value = ''; document.getElementById('noteTitle').value = ''; document.getElementById('noteBody').value = ''; }
-        else { msg.textContent = data.error || 'Failed.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
-    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; }
-}
-
-async function uploadResource() {
-    var email = document.getElementById('resourceMentee').value.trim();
-    var type = document.getElementById('resourceType').value;
-    var fileInput = document.getElementById('resourceFile');
-    var msg = document.getElementById('uploadMsg'); msg.style.display = 'none';
-    if (!email) { msg.textContent = 'Enter mentee email.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
-    if (!type) { msg.textContent = 'Select resource type.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
-    if (!fileInput.files.length) { msg.textContent = 'Choose a PDF.'; msg.style.color = '#B33A3A'; msg.style.display = 'inline'; return; }
-    var file = fileInput.files[0];
-    var filename = type.toLowerCase().replace(/ /g, '-') + '.pdf';
-    msg.textContent = 'Uploading...'; msg.style.color = 'var(--text-muted)'; msg.style.display = 'inline';
-    var formData = new FormData();
-    formData.append('file', file);
-    formData.append('filename', filename);
-    formData.append('title', type);
-    formData.append('mentee_email', email);
-    try {
-        var res = await adminFetch('/api/admin/upload-resource', { method: 'POST', body: formData });
-        var data = await res.json();
-        if (data.success) { msg.textContent = 'Uploaded successfully.'; msg.style.color = '#6B8E6B'; fileInput.value = ''; document.getElementById('resourceType').value = ''; document.getElementById('resourceMentee').value = ''; }
-        else { msg.textContent = data.error || 'Upload failed.'; msg.style.color = '#B33A3A'; }
-    } catch (err) { msg.textContent = 'Connection error.'; msg.style.color = '#B33A3A'; }
-    msg.style.display = 'inline';
-}
-
-async function loadPayments() {
-    const container = document.getElementById("paymentsList");
-    try {
-        const res = await adminFetch("/api/admin/payment-proofs");
-        const data = await res.json();
-        if (!data.length) {
-            container.innerHTML = '<p style="color: var(--text-muted);">No payment proofs yet.</p>';
-            return;
-        }
-        container.innerHTML = data.map(function(p) {
-            var html = '<div class="card" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">';
-            html += '<div>';
-            html += '<p style="font-weight: 500;">' + p.applicant_email + '</p>';
-            html += '<p style="color: var(--text-muted); font-size: 0.78rem;">' + new Date(p.uploaded_at).toLocaleString() + '</p>';
-            html += '</div>';
-            if (p.screenshot_url) {
-                html += '<a href="' + p.screenshot_url + '" target="_blank" style="font-size: 0.8rem; color: #C9A830; text-decoration: none;">View Screenshot</a>';
-            } else {
-                html += '<span style="font-size: 0.8rem; color: var(--text-muted);">Message only</span>';
-            }
-            html += '<button onclick="approvePayment(\'' + p.id + '\', \'' + p.applicant_email + '\')" style="padding: 6px 16px; background: none; border: 1px solid #C9A830; color: #C9A830; cursor: pointer; font-size: 0.75rem; border-radius: 3px;">Approve</button>';
-            html += '</div>';
-            return html;
-        }).join("");
-    } catch (err) {
-        container.innerHTML = '<p style="color: #B33A3A;">Failed to load.</p>';
-    }
-}
-
-async function approvePayment(proofId, email) {
-    try {
-        var res = await adminFetch("/api/admin/approve-payment", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ proof_id: proofId, email: email })
-        });
-        var data = await res.json();
-        if (data.success) {
-            alert("Approved. Access code: " + data.code);
-            loadPayments();
-            loadMentees();
-        }
-    } catch (err) {}
-}
-loadApplicants();
+function logout() { document.getElementById('portalContent').style.display = 'none'; document.getElementById('lockScreen').style.display = 'block'; document.getElementById('accessCode').value = ''; document.getElementById('errorMsg').style.display = 'none'; }
+document.getElementById('accessCode').addEventListener('keypress', function(e) { if (e.key === 'Enter') verifyAccess(); });
 </script>
 
 </body>
