@@ -20,10 +20,24 @@ function adminAuth(req, res, next) {
     res.status(401).json({ error: 'Unauthorized.' });
 }
 
+async function getOrCreateCode() {
+    let { data: codes } = await supabase.from('access_codes').select('*').eq('is_used', false).limit(1);
+    if (!codes || !codes.length) {
+        const newCodes = [];
+        for (let i = 0; i < 10; i++) {
+            newCodes.push({ code: 'SIDNEY-' + Math.random().toString(36).substring(2, 10).toUpperCase() });
+        }
+        await supabase.from('access_codes').insert(newCodes);
+        let { data: freshCodes } = await supabase.from('access_codes').select('*').eq('is_used', false).limit(1);
+        codes = freshCodes;
+    }
+    return codes && codes.length ? codes[0].code : null;
+}
+
 const loginLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 5, message: { error: 'Too many login attempts.' } });
-const accessCodeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 10, message: { error: 'Too many attempts.' } });
-const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 50, message: { error: 'Too many requests.' } });
-const applyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 10, message: { error: 'Too many applications.' } });
+const accessCodeLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: { error: 'Too many attempts.' } });
+const apiLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 100, message: { error: 'Too many requests.' } });
+const applyLimiter = rateLimit({ windowMs: 60 * 60 * 1000, max: 20, message: { error: 'Too many applications.' } });
 
 // ============ PAGES ============
 app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
@@ -49,8 +63,7 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
     if (error) return res.status(500).json({ error: 'Failed to submit.' });
 
     if (payment_confirmation && payment_confirmation !== 'Pending') {
-        const { error: proofError } = await supabase.from('payment_proofs').insert({ applicant_email: email, message: payment_confirmation });
-        if (proofError) console.error('Proof error:', proofError);
+        await supabase.from('payment_proofs').insert({ applicant_email: email, message: payment_confirmation });
     }
 
     res.json({ success: true, applicant_id: data.id });
@@ -78,17 +91,15 @@ app.get('/api/paystack/verify', async (req, res) => {
 
         const email = result.data.customer.email;
         const amount = result.data.amount / 100;
+        const code = await getOrCreateCode();
+        if (!code) return res.json({ success: false, message: 'Could not generate access code. Contact Sidney.' });
 
-        const { data: codes } = await supabase.from('access_codes').select('*').eq('is_used', false).limit(1);
-        if (!codes || !codes.length) return res.json({ success: false, message: 'No codes available.' });
-
-        const code = codes[0].code;
         const { error: linkError } = await supabase.from('mentees').upsert({ email, access_code: code, payment_status: 'verified', payment_amount: amount, payment_method: 'paystack' }, { onConflict: 'email' });
-        if (linkError) { console.error('Link error:', linkError); return res.json({ success: false, message: 'Failed to link code.' }); }
+        if (linkError) return res.json({ success: false, message: 'Failed to link code.' });
 
         await supabase.from('access_codes').update({ is_used: true }).eq('code', code);
         res.json({ success: true, code });
-    } catch (err) { console.error('Verify error:', err); res.status(500).json({ error: 'Verification failed.' }); }
+    } catch (err) { res.status(500).json({ error: 'Verification failed.' }); }
 });
 
 // ============ PORTAL ACCESS ============
@@ -103,7 +114,6 @@ app.post('/api/verify-access', accessCodeLimiter, async (req, res) => {
     if (!menteeData) return res.status(401).json({ valid: false, message: 'No mentee found.' });
 
     await supabase.from('mentees').update({ portal_accessed: true }).eq('id', menteeData.id);
-
     res.json({ valid: true, mentee: { full_name: menteeData.full_name, email: menteeData.email, current_stage: menteeData.current_stage } });
 });
 
@@ -176,9 +186,8 @@ app.get('/api/admin/payment-proofs', adminAuth, apiLimiter, async (req, res) => 
 app.post('/api/admin/approve-payment', adminAuth, apiLimiter, async (req, res) => {
     const { proof_id, email } = req.body;
     await supabase.from('payment_proofs').update({ status: 'approved' }).eq('id', proof_id);
-    const { data: codes } = await supabase.from('access_codes').select('*').eq('is_used', false).limit(1);
-    if (!codes || !codes.length) return res.status(400).json({ error: 'No codes available.' });
-    const code = codes[0].code;
+    const code = await getOrCreateCode();
+    if (!code) return res.status(400).json({ error: 'Could not generate code.' });
     const { error: linkError } = await supabase.from('mentees').upsert({ email, access_code: code, payment_status: 'verified' }, { onConflict: 'email' });
     if (linkError) return res.status(500).json({ error: 'Failed to link.' });
     await supabase.from('access_codes').update({ is_used: true }).eq('code', code);
